@@ -1,2 +1,2 @@
-﻿# Sony Camera Plugin
+﻿# Pentax Camera Plugin
 
