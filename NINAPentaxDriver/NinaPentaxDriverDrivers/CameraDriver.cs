@@ -109,13 +109,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 if (LastSetFastReadout && m_captureState == CameraStates.Exposing) {
                     bitmapsToProcess.Enqueue(bitmapImage);
                     m_captureState = CameraStates.Idle;
+                    LogCameraMessage(1,"", "Enqueued LiveView Image");
                 }
 
             }
 
             // Image Added
             public override void ImageAdded(CameraDevice sender, CameraImage image) {
+                LogCameraMessage(5, "", "Received Image " + image.Name + " Capture state "+m_captureState.ToString());
                 if (!Settings.BulbModeEnable) {
+                    LogCameraMessage(5, "", sender.Status.CurrentCapture.ID.ToString() + " " + lastCaptureResponse.ToString() + " " + canceledCaptureResponse.ToString());
 
                     if (lastCaptureResponse == canceledCaptureResponse) {
                         image.Delete();
@@ -131,7 +134,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                         m_captureState = CameraStates.Reading;
                         // TODO: Add frame progress
                         Response imageGetResponse = image.GetData(fs);
+                        LogCameraMessage(0,"","Get Image has " +
+                            (imageGetResponse.Result == Result.OK ?
+                                "SUCCEED." : "FAILED."));
                         // TODO: save to memory instead MemoryStream
+                        LogCameraMessage(0,"", System.IO.Path.GetTempPath() + Path.DirectorySeparatorChar +
+                        image.Name);
                         imagesToProcess.Enqueue(System.IO.Path.GetTempPath() + Path.DirectorySeparatorChar + image.Name);
                         if (Settings.BulbModeEnable)
                             m_captureState = CameraStates.Idle;
@@ -141,10 +149,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             // Capture Complete
             public override void CaptureComplete(CameraDevice sender, Capture capture) {
                 m_captureState = CameraStates.Idle;
+                LogCameraMessage(0,"","Capture Complete. Capture ID: "+capture.ID.ToString()+" tracking "+lastCaptureResponse.ToString()+" "+canceledCaptureResponse.ToString());
             }
 
             public override void DeviceDisconnected(CameraDevice sender, Ricoh.CameraController.DeviceInterface deviceInterface) {
                 //Best we can do
+                LogCameraMessage(0,"","Device Disconnected.");
                 //_requestTermination.Set();
                 m_captureState = CameraStates.Error;
                 _camera = null;
@@ -297,6 +307,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }
 
             set {
+                LogCameraMessage(0,"", "set_Gain "+value.ToString());
                 gainIndex = value;
                 if (gainIndex < 0)
                     gainIndex = 0;
@@ -338,6 +349,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 m_gains.Add("ISO 1600");
                 m_gains.Add("ISO 3200");*/
 
+                LogCameraMessage(0,"", "get_Gains");
 
                 for (int i=0;i<6;i++) {
                      gains.Add(i);
@@ -485,6 +497,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             return Task.Run<bool>(() => {
                 if (_camera != null) {
                     if (_camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB)) {
+                        LogCameraMessage(0, "Connected", "Disconnecting first...");
                         _camera.Disconnect(Ricoh.CameraController.DeviceInterface.USB);
                     }
                     _camera = null;
@@ -499,10 +512,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                         SetupDialog();
                     }
 
+                    LogCameraMessage(0,"Connected", "Connecting...");
                     List<CameraDevice> detectedCameraDevices = CameraDeviceDetector.Detect(Ricoh.CameraController.DeviceInterface.USB);
                     //                            Thread.Sleep(500);
                     //                            detectedCameraDevices = CameraDeviceDetector.Detect(Ricoh.CameraController.DeviceInterface.USB);
+                    LogCameraMessage(0, "Connected", "Number of detected cameras " + detectedCameraDevices.Count.ToString()+" "+Settings.DeviceId.ToString());
                     foreach (CameraDevice camera in detectedCameraDevices) {
+                        LogCameraMessage(0, "Connected", "Checking " + camera.Model.ToString() + " " + Settings.DeviceId.ToString());
                         if (camera.Model == Settings.DeviceId) {
                             _camera = camera;
                             break;
@@ -512,11 +528,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     if (_camera != null) {
                         var response = _camera.Connect(Ricoh.CameraController.DeviceInterface.USB);
                         if (response.Equals(Response.OK)) {
+                            LogCameraMessage(0,"Connected", "Connected. Model: " + _camera.Model + ", SerialNumber:" + _camera.SerialNumber);
                             Settings.DeviceId = _camera.Model;
 
                             bool k3m3 = false;
 
                             if (_camera.Model.StartsWith("PENTAX K-3 Mark III")) {
+                                LogCameraMessage(0, "Connect", "Bulb mode not supported on K-3 Mark III");
                                 k3m3 = true;
                                 Settings.BulbModeEnable = false;
                             }
@@ -557,7 +575,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             bool connect = _camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB);
                             if (!connect) {
                                 //System.Windows.Forms.MessageBox.Show("Connect seems to have failed");
-                                //DriverCommon.LogCameraMessage(0, "Connected", "IsConnected false");
+                                LogCameraMessage(0, "Connected", "IsConnected false");
                             }
 
                             StorageWriting sw = new StorageWriting();
@@ -582,6 +600,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 return false;
                             }
 
+                            LogCameraMessage(0, "Connect", "Driver Version: 7/25/2025");
+                            LogCameraMessage(0, "Bulb mode", Settings.BulbModeEnable.ToString()+" mode "+exposureProgram.ToString());
                             // Sleep to let the settings take effect
                             Thread.Sleep(1000);
                             if (Settings.UseLiveview)
@@ -602,6 +622,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             if (_camera.EventListeners.Count == 0)
                                 _camera.EventListeners.Add(new EventListener());
                         } else {
+                            LogCameraMessage(0,"Connected", "Connection failed.");
                             return false;
                         }
                     } else {
@@ -625,6 +646,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 m_captureState = CameraStates.Error;
                 _camera = null;
+                LogCameraMessage(0,"Connected", "Closed connection to camera");
             }
         }
 
@@ -665,6 +687,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 double Duration = sequence.ExposureTime;
 
+                LogCameraMessage(0, "", "StartExposure()");
                 //Check duration range and save 
                 if (Duration <= 0.0) {
                     throw new InvalidValueException("StartExposure", "Duration", " > 0");
@@ -691,6 +714,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 if (LastSetFastReadout) {
                     //No need to start exposure
+                    LogCameraMessage(0, "", "StartExposure() fast");
                     if (Duration <= 0.0) {
                         throw new InvalidValueException("StartExposure", "Duration", " > 0");
                     }
@@ -957,6 +981,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 } else {
                     lastCaptureResponse = "None";
                     m_captureState = CameraStates.Error;
+                    LogCameraMessage(0, "StartExposure", "Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button");
                     throw new ASCOM.InvalidOperationException("Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button");
                 }
             }
@@ -968,6 +993,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public void AbortExposure() {
             // TODO: fix abort exposure - test bulb mode
+            LogCameraMessage(0, "", "AbortExposure");
             if (LastSetFastReadout) {
                 m_captureState = CameraStates.Idle;
                 return;
@@ -978,8 +1004,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 return;
 
             //StopCapture doesn't get called
+            LogCameraMessage(0, "AbortExposure", "Stopping Capture.");
             while (m_captureState != CameraStates.Exposing) {
                 Thread.Sleep(100);
+                LogCameraMessage(0, "AbortExposure", "Waiting for capture to start.");
             }
 
             if (Settings.BulbModeEnable)
@@ -996,6 +1024,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
             while (m_captureState == CameraStates.Exposing) {
                 Thread.Sleep(100);
+                LogCameraMessage(0, "AbortExposure", "Waiting for capture to finish.");
             }
 
             return;
