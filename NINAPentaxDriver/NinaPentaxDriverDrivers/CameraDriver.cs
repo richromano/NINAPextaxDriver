@@ -56,7 +56,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         // Extra data - could be in a separate class
         private static int MaxImageWidthPixels;
         private static int MaxImageHeightPixels;
-        private static PentaxKPProfile Settings;
+        private static PentaxKPProfile Settings = new PentaxKPProfile();
         private int gainIndex;
         public static CameraStates m_captureState = CameraStates.Error;
         public static bool LastSetFastReadout;
@@ -495,22 +495,22 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public Task<bool> Connect(CancellationToken token) {
             return Task.Run<bool>(() => {
-                if (_camera != null) {
+                /*if (_camera != null) {
                     if (_camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB)) {
                         LogCameraMessage(0, "Connected", "Disconnecting first...");
                         _camera.Disconnect(Ricoh.CameraController.DeviceInterface.USB);
                     }
                     _camera = null;
-                }
+                }*/
 
                 if (_camera == null) {
-                    if (System.Diagnostics.Process.GetCurrentProcess().ProcessName == "SharpCap") {
+                    /*if (System.Diagnostics.Process.GetCurrentProcess().ProcessName == "SharpCap") {
                         SetupDialog();
                     }
 
                     if (Settings.DeviceId == "") {
                         SetupDialog();
-                    }
+                    }*/
 
                     LogCameraMessage(0,"Connected", "Connecting...");
                     List<CameraDevice> detectedCameraDevices = CameraDeviceDetector.Detect(Ricoh.CameraController.DeviceInterface.USB);
@@ -518,8 +518,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     //                            detectedCameraDevices = CameraDeviceDetector.Detect(Ricoh.CameraController.DeviceInterface.USB);
                     LogCameraMessage(0, "Connected", "Number of detected cameras " + detectedCameraDevices.Count.ToString()+" "+Settings.DeviceId.ToString());
                     foreach (CameraDevice camera in detectedCameraDevices) {
-                        LogCameraMessage(0, "Connected", "Checking " + camera.Model.ToString() + " " + Settings.DeviceId.ToString());
-                        if (camera.Model == Settings.DeviceId) {
+                        LogCameraMessage(0, "Connected", "Checking " + camera.Model.ToString() + "  " + "PENTAX K-3 Mark III");
+                        if (camera.Model == "PENTAX K-3 Mark III") {
                             _camera = camera;
                             break;
                         }
@@ -578,6 +578,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 LogCameraMessage(0, "Connected", "IsConnected false");
                             }
 
+                            LogCameraMessage(0, "Connected", "IsConnected true");
+
                             StorageWriting sw = new StorageWriting();
                             sw = Ricoh.CameraController.StorageWriting.False;
                             StillImageCaptureFormat sicf = new StillImageCaptureFormat();
@@ -592,11 +594,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             //ExposureProgram ep = new ExposureProgram();
                             //ep = Ricoh.CameraController.ExposureProgram.Bulb;
                             //DriverCommon.m_camera.SetCaptureSettings(new List<CaptureSetting>() { ep });
+                            LogCameraMessage(0, "Connected", "Setting capture setting");
                             try {
                                 _camera.SetCaptureSettings(new List<CaptureSetting>() { sw });
                                 _camera.SetCaptureSettings(new List<CaptureSetting>() { siq });
                                 _camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
-                            } catch {
+                            } catch (Exception e) {
+                                LogCameraMessage(0, "Connected", e.Message.ToString());
                                 return false;
                             }
 
