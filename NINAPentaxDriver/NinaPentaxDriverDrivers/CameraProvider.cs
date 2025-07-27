@@ -5,6 +5,7 @@ using NINA.Equipment.Interfaces.ViewModel;
 using NINA.Image.Interfaces;
 using NINA.Profile.Interfaces;
 using NINA.WPF.Base.Mediator;
+using NINA.Equipment.Interfaces.Mediator;
 using Ricoh.CameraController;
 using System;
 using System.Collections;
@@ -27,20 +28,22 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class CameraProvider : IEquipmentProvider<ICamera> {
         private IProfileService profileService;
         private IExposureDataFactory exposureDataFactory;
-//        SonyDriver driver;
+        private ITelescopeMediator telescopeMediator;
+        //        SonyDriver driver;
 
         [ImportingConstructor]
-        public CameraProvider(IProfileService profileService, IExposureDataFactory exposureDataFactory) {
+        public CameraProvider(IProfileService profileService, ITelescopeMediator telescopeMediator, IExposureDataFactory exposureDataFactory) {
             this.profileService = profileService;
             this.exposureDataFactory = exposureDataFactory;
+            this.telescopeMediator = telescopeMediator;
 
- /*           if (!DllLoader.IsX86()) {
-                try {
-                    this.driver = SonyDriver.GetInstance();
-                } catch (Exception ex) {
-                    Logger.Error(ex);
-                }
-            }*/
+            /*           if (!DllLoader.IsX86()) {
+                           try {
+                               this.driver = SonyDriver.GetInstance();
+                           } catch (Exception ex) {
+                               Logger.Error(ex);
+                           }
+                       }*/
         }
 
         public string Name => "NINAPentaxCamera";
@@ -217,7 +220,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 //if (camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB))
                 {
-                    devices.Add(new CameraDriver(profileService, exposureDataFactory, info));
+                    devices.Add(new CameraDriver(profileService, telescopeMediator, exposureDataFactory, info));
                 }
 
                 //camera.Disconnect(Ricoh.CameraController.DeviceInterface.USB);

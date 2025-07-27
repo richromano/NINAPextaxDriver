@@ -13,6 +13,7 @@ using NINA.Image.ImageData;
 using NINA.Image.Interfaces;
 using NINA.Profile;
 using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Mediator;
 using Ricoh.CameraController;
 using System;
 using System.Collections;
@@ -48,6 +49,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private PentaxKPProfile.DeviceInfo _device;
         private IProfileService _profileService;
         private readonly IExposureDataFactory _exposureDataFactory;
+        private ITelescopeMediator _telescopeMediator;
         private bool _liveViewEnabled;
         private short _readoutModeForSnapImages;
         private short _readoutModeForNormalImages;
@@ -67,9 +69,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         internal static string canceledCaptureResponse = "None";
         internal static DateTime lastCaptureStartTime = DateTime.MinValue;
 
-        public CameraDriver(IProfileService profileService, IExposureDataFactory exposureDataFactory, PentaxKPProfile.DeviceInfo device) {
+        public CameraDriver(IProfileService profileService, ITelescopeMediator telescopeMediator, IExposureDataFactory exposureDataFactory, PentaxKPProfile.DeviceInfo device) {
             _profileService = profileService;
             _exposureDataFactory = exposureDataFactory;
+            _telescopeMediator = telescopeMediator;
             _device = device;
         }
 
@@ -512,7 +515,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                         SetupDialog();
                     }*/
 
-                    Settings.DeviceId = "PENTAX K-3 Mark III";
+                    Settings.DeviceId = Name;
 
                     LogCameraMessage(0,"Connected", "Connecting...");
                     List<CameraDevice> detectedCameraDevices = CameraDeviceDetector.Detect(Ricoh.CameraController.DeviceInterface.USB);
@@ -553,7 +556,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             ExposureProgram exposureProgram = new ExposureProgram();
 
-/*                            while (true) {
+                            Settings.BulbModeEnable = false;
+
+                            while (true) {
                                 try {
                                     _camera.GetCaptureSettings(
                                         new List<CaptureSetting>() { exposureProgram });
@@ -565,14 +570,14 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                     if (exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Bulb))
                                         break;
                                     else
-                                        System.Windows.Forms.MessageBox.Show("Set the Camera Exposure Program to BULB");
+                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to BULB");
                                 } else {
                                     if (exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Manual))
                                         break;
                                     else
-                                        System.Windows.Forms.MessageBox.Show("Set the Camera Exposure Program to MANUAL");
+                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL");
                                 }
-                            }*/
+                            }
 
                             bool connect = _camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB);
                             if (!connect) {
@@ -598,9 +603,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             //DriverCommon.m_camera.SetCaptureSettings(new List<CaptureSetting>() { ep });
                             LogCameraMessage(0, "Connected", "Setting capture setting");
                             try {
-                                //_camera.SetCaptureSettings(new List<CaptureSetting>() { sw });
-                                //_camera.SetCaptureSettings(new List<CaptureSetting>() { siq });
-                                //_camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
+                                _camera.SetCaptureSettings(new List<CaptureSetting>() { sw });
+                                _camera.SetCaptureSettings(new List<CaptureSetting>() { siq });
+                                _camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
                             } catch (Exception e) {
                                 LogCameraMessage(0, "Connected", e.Message.ToString());
                                 return false;
@@ -685,8 +690,25 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             });
         }
         public void SetupDialog() {
-            throw new ASCOM.NotImplementedException();
+            throw new ASCOM.NotImplementedException("SetupDialog is not implemented for this camera driver.");
         }
+
+        private void RequestSnapPortCaptureStart() {
+            Logger.Debug("Request start of exposure");
+            var success = _telescopeMediator.SendToSnapPort(true);
+            if (!success) {
+                throw new Exception("Request to telescope snap port failed");
+            }
+        }
+
+        private void RequestSnapPortCaptureStop() {
+            Logger.Debug("Request stop of exposure");
+            var success = _telescopeMediator.SendToSnapPort(false);
+            if (!success) {
+                throw new Exception("Request to telescope snap port failed");
+            }
+        }
+
 
         public void StartExposure(CaptureSequence sequence) {
             if (_camera != null) {
