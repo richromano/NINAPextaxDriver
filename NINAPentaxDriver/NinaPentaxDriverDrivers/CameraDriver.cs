@@ -22,11 +22,14 @@ using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using System.Xml;
 using static Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers.CameraProvider;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using String = System.String;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class CameraDriver : BaseINPC, ICamera {
@@ -150,7 +153,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }
 
             // Capture Complete
-            public override void CaptureComplete(CameraDevice sender, Capture capture) {
+            public override void CaptureComplete(CameraDevice sender, Ricoh.CameraController.Capture capture) {
                 m_captureState = CameraStates.Idle;
                 LogCameraMessage(0,"","Capture Complete. Capture ID: "+capture.ID.ToString()+" tracking "+lastCaptureResponse.ToString()+" "+canceledCaptureResponse.ToString());
             }
@@ -601,6 +604,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             LogCameraMessage(0, "Bulb mode", Settings.BulbModeEnable.ToString()+" mode "+exposureProgram.ToString());
                             // Sleep to let the settings take effect
                             Thread.Sleep(1000);
+
+                            Settings.UseLiveview = true;
+
                             if (Settings.UseLiveview)
                                 _camera.StartLiveView();
 
@@ -1102,7 +1108,28 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         public bool SendCommandBool(string command, bool raw = true) {
-            throw new ASCOM.NotImplementedException();
+            if (command.StartsWith("SetPosition")) 
+            {
+                if (_camera == null) {
+                    LogCameraMessage(0, "SendCommandBool", "Camera null");
+                    return false;
+                }
+
+                Match match = Regex.Match(command, @"-?\d+");
+
+                if (match.Success) {
+                    int number = int.Parse(match.Value);
+                    LogCameraMessage(0, "SendCommandBool", $"Number is {number}");
+                    _camera.Focus(number);
+                    return true;
+                }
+
+                return false; 
+            }
+            else
+            {
+                throw new ASCOM.NotImplementedException(); 
+            }
         }
 
         public string SendCommandString(string command, bool raw = true) {

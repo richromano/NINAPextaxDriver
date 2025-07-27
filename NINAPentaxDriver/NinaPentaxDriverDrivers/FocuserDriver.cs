@@ -36,12 +36,11 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         internal bool _moving = false;
         internal bool _connected = false;
         private ICameraMediator _cameraMediator;
-        private int _currentPosition;
+        private int _currentPosition = 10000;
 
         public FocuserDriver(IProfileService profileService, ICameraMediator cameraMediator) {
             _profileService = profileService;
             _cameraMediator = cameraMediator;
-            _currentPosition = 10000;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -62,8 +61,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }
 
             set {
+                _moving = true;
+                _cameraMediator.SendCommandBool($"SetPosition {_currentPosition-value}");
                 _currentPosition = value;
-                _cameraMediator.SendCommandString($"SetPosition {_currentPosition}");
+                _moving = false;
             }
         }
 
@@ -87,8 +88,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public bool Connected {
             get {
-                // Check that the camera is still open, if it is closed, then we are also closed
-                return _connected;
+                // TODO: Check that the camera is still open, if it is closed, then we are also closed
+                return _cameraMediator.SendCommandBool($"SetPosition {0}");
+
             }
         }
 
@@ -105,13 +107,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         public Task<bool> Connect(CancellationToken token) {
-            _moving = false;
-
             return Task<bool>.Run(() => {
                _connected = true;
                _moving = true;
-                Position = 10000;
-               _moving = false;
+                _currentPosition = 10000;
+                _connected = _cameraMediator.SendCommandBool($"SetPosition {-_currentPosition}");
+                _moving = false;
                 return _connected;
             });
         }
