@@ -1093,15 +1093,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         public Task<IExposureData> DownloadExposure(CancellationToken token) {
             return Task.Run<IExposureData>(() => {
                 string filename=imagesToProcess.Dequeue();
+                FileStream fs = new FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None);
 
-
-                byte[] rawImageData = ReadImageFileRGGB(filename);
+                byte[] readData = new byte[fs.Length];
+                fs.Read(readData, 0, readData.Length);
 
                 var metaData = new ImageMetaData();
 
                 return _exposureDataFactory.CreateRAWExposureData(
                     converter: _profileService.ActiveProfile.CameraSettings.RawConverter,
-                    rawBytes: rawImageData,
+                    rawBytes: readData,
                     rawType: "dng",
                     bitDepth: this.BitDepth,
                     metaData: metaData);
