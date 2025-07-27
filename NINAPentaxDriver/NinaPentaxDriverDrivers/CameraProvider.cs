@@ -29,21 +29,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private IProfileService profileService;
         private IExposureDataFactory exposureDataFactory;
         private ITelescopeMediator telescopeMediator;
-        //        SonyDriver driver;
-
         [ImportingConstructor]
         public CameraProvider(IProfileService profileService, ITelescopeMediator telescopeMediator, IExposureDataFactory exposureDataFactory) {
             this.profileService = profileService;
             this.exposureDataFactory = exposureDataFactory;
             this.telescopeMediator = telescopeMediator;
 
-            /*           if (!DllLoader.IsX86()) {
-                           try {
-                               this.driver = SonyDriver.GetInstance();
-                           } catch (Exception ex) {
-                               Logger.Error(ex);
-                           }
-                       }*/
         }
 
         public string Name => "NINAPentaxCamera";
