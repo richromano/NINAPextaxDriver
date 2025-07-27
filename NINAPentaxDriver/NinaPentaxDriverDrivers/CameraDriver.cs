@@ -66,13 +66,11 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         internal static string lastCaptureResponse = "None";
         internal static string canceledCaptureResponse = "None";
         internal static DateTime lastCaptureStartTime = DateTime.MinValue;
-        private ImageDataProcessor _imageDataProcessor;
 
         public CameraDriver(IProfileService profileService, IExposureDataFactory exposureDataFactory, PentaxKPProfile.DeviceInfo device) {
             _profileService = profileService;
             _exposureDataFactory = exposureDataFactory;
             _device = device;
-            _imageDataProcessor = new ImageDataProcessor();
         }
 
         #region Internal Helpers
@@ -1048,38 +1046,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             } catch {
                 return false;
             }
-        }
-
-        private byte[] ReadImageFileRGGB(string MNewFile) {
-            object result = null;
-            //Bitmap _bmp;
-            //int MSensorWidthPx = DriverCommon.Settings.Info.ImageWidthPixels;
-            //int MSensorHeightPx = DriverCommon.Settings.Info.ImageHeightPixels;
-            // TODO: Should be returned based on image size
-            int[,] rgbImage;// = new int[MSensorWidthPx, MSensorHeightPx]; // Assuming this is declared and initialized elsewhere.
-
-
-            // Wait for the file to be closed and available.
-            while (!IsFileClosed(MNewFile)) { }
-            rgbImage = _imageDataProcessor.ReadRBBGPentax(MNewFile);
-
-            int scale = 1;
-
-            if (Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RAWBGR ||
-                Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RGGB)
-                scale = 4;
-
-            for (int y = 0; y < rgbImage.GetLength(1); y++) {
-                for (int x = 0; x < rgbImage.GetLength(0); x++) {
-                    rgbImage[x, y] = scale * rgbImage[x, y];
-                }
-            }
-
-            byte[] byteImage =new byte[rgbImage.GetLength(0)*rgbImage.GetLength(0)*sizeof(int)];
-
-            // TODO: Sharpcap problem
-            //result = Resize(rgbImage, 2, StartX, StartY, NumX, NumY);
-            return byteImage;
         }
 
         public async Task WaitUntilExposureIsReady(CancellationToken token) {
