@@ -1,19 +1,19 @@
 ﻿using NINA.Core.Utility;
-using NINA.Equipment.Interfaces.ViewModel;
 using NINA.Equipment.Interfaces;
+using NINA.Equipment.Interfaces.Mediator;
+using NINA.Equipment.Interfaces.ViewModel;
+using NINA.Image.Interfaces;
 using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Mediator;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.ComponentModel.Composition;
-using NINA.Image.Interfaces;
-using NINA.WPF.Base.Mediator;
-using Sony;
 
-namespace NINA.RetroKiwi.Plugin.SonyCamera.Drivers {
+namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     /// <summary>
     /// This Class shows the basic principle on how to add a new Device driver to N.I.N.A. via the plugin interface
     /// When the application scans for equipment the "GetEquipment" method of a device provider is called.
@@ -22,41 +22,21 @@ namespace NINA.RetroKiwi.Plugin.SonyCamera.Drivers {
     [Export(typeof(IEquipmentProvider))]
     public class FocuserProvider : IEquipmentProvider<IFocuser> {
         private IProfileService profileService;
-        SonyDriver driver;
+        private ICameraMediator cameraMediator;
 
         [ImportingConstructor]
-        public FocuserProvider(IProfileService profileService) {
+        public FocuserProvider(IProfileService profileService, ICameraMediator cameraMediator) {
             this.profileService = profileService;
-
-            if (!DllLoader.IsX86()) {
-                try {
-                    this.driver = SonyDriver.GetInstance();
-                } catch (Exception ex) {
-                    Logger.Error(ex);
-                }
-            }
+            this.cameraMediator = cameraMediator;
         }
 
-        public string Name => "SonyCameraPlugin";
+        public string Name => "NINA Pentax Driver";
 
         public IList<IFocuser> GetEquipment() {
             Logger.Info("Asked for a list of focusers");
             var devices = new List<IFocuser>();
 
-            if (this.driver != null) {
-                try {
-                    int count = 0;
-
-                    foreach (var lens in driver.Lenses()) {
-                        count++;
-                        devices.Add(new FocuserDriver(profileService, lens));
-                    }
-
-                    Logger.Info($"Found {count} Sony Lenses");
-                } catch (Exception ex) {
-                    Logger.Error(ex);
-                }
-            }
+            devices.Add(new FocuserDriver(profileService, cameraMediator));
 
             return devices;
         }

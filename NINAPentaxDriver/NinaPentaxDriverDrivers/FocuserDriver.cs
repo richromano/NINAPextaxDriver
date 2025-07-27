@@ -16,6 +16,7 @@ using NINA.Core.Locale;
 using NINA.Core.Model.Equipment;
 using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
+using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Equipment.MyGuider.PHD2;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
@@ -26,47 +27,30 @@ using NINA.Image.ImageData;
 using NINA.Image.Interfaces;
 using NINA.Profile;
 using NINA.Profile.Interfaces;
-using Sony;
+using Ricoh.CameraController;
 
-namespace NINA.RetroKiwi.Plugin.SonyCamera.Drivers {
+namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class FocuserDriver : IFocuser, IDisposable {
         private bool disposedValue;
-        internal SonyLens _info;
         internal IProfileService _profileService;
         internal bool _moving = false;
         internal bool _connected = false;
+        private ICameraMediator _cameraMediator;
+        private int _currentPosition;
 
-        public FocuserDriver(IProfileService profileService, SonyLens info) {
+        public FocuserDriver(IProfileService profileService, ICameraMediator cameraMediator) {
             _profileService = profileService;
-            _info = info;
+            _cameraMediator = cameraMediator;
+            _currentPosition = 10000;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public bool IsMoving { get => _moving; }
 
-        private uint GetCameraHandle() {
-            SonyCameraInfo camera = SonyDriver.GetInstance().CameraInfo;
-
-            if (camera != null) {
-                return camera.Handle;
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
         public int MaxIncrement {
             get {
-                uint hCamera = GetCameraHandle();
-
-                if (hCamera != 0) {
-                    return (int)SonyDriver.GetInstance().GetFocusLimit(hCamera);
-                }
-                else {
-                    return 0;
-                }
+                return 10000;
             }
         }
 
@@ -74,23 +58,12 @@ namespace NINA.RetroKiwi.Plugin.SonyCamera.Drivers {
 
         public int Position {
             get {
-                uint hCamera = GetCameraHandle();
-
-                if (hCamera != 0) {
-                    return (int)SonyDriver.GetInstance().GetFocusPosition(hCamera);
-                } else {
-                    return 0;
-                }
+                return _currentPosition;
             }
 
             set {
-                uint hCamera = GetCameraHandle();
-
-                if (hCamera != 0) {
-                    _moving = true;
-                    SonyDriver.GetInstance().SetFocusPosition(hCamera, (uint)value);
-                    _moving = false;
-                }
+                _currentPosition = value;
+                _cameraMediator.SendCommandString($"SetPosition {_currentPosition}");
             }
         }
 
@@ -102,36 +75,26 @@ namespace NINA.RetroKiwi.Plugin.SonyCamera.Drivers {
 
         public double Temperature { get => double.NaN; }
 
-        public bool HasSetupDialog => throw new NotImplementedException();
+        public bool HasSetupDialog => false;
 
-        public string Id { get => _info.Id; }
+        public string Id { get => "One"; }
 
-        public string Name { get => $"{_info.Manufacturer} {_info.Model}"; }
+        public string Name { get => "Pentax Lens"; }
 
-        public string DisplayName { get => $"{_info.Manufacturer} {_info.Model}"; }
+        public string DisplayName { get => "Pentax Lens"; }
 
-        public string Category { get => "Sony"; }
+        public string Category { get => "Pentax"; }
 
         public bool Connected {
             get {
                 // Check that the camera is still open, if it is closed, then we are also closed
-                if (_connected) {
-                    UInt32 hCamera = GetCameraHandle();
-
-                    if (hCamera == 0) {
-                        Logger.Debug("Sony camera was disconnected without closing focuser first, cleaning up");
-                        _connected = false;
-                        _moving = false;
-                    }
-                }
-
                 return _connected;
             }
         }
 
-        public string Description { get => _info.Model; }
+        public string Description { get => "Pentax Lens"; }
 
-        public string DriverInfo => "https://retro.kiwi";
+        public string DriverInfo => "https://github.com/richromano/NINAPextaxDriver";
 
         public string DriverVersion => string.Empty;
 
@@ -145,18 +108,10 @@ namespace NINA.RetroKiwi.Plugin.SonyCamera.Drivers {
             _moving = false;
 
             return Task<bool>.Run(() => {
-                UInt32 hCamera = GetCameraHandle();
-
-                if (hCamera != 0) {
-                    _connected = true;
-
-                    _moving = true;
-                    SonyDriver.GetInstance().SetAttachedLens(hCamera, Id);
-                    _moving = false;
-                } else {
-                    Notification.ShowWarning(Loc.Instance["LblNoCameraConnected"]);
-                }
-
+               _connected = true;
+               _moving = true;
+                Position = 10000;
+               _moving = false;
                 return _connected;
             });
         }
@@ -171,25 +126,12 @@ namespace NINA.RetroKiwi.Plugin.SonyCamera.Drivers {
         }
 
         public Task Move(int position, CancellationToken ct, int waitInMs) {
-            UInt32 hCamera = GetCameraHandle();
+            _moving = true;
 
-            if (hCamera != 0) {
-                _moving = true;
-
-                return Task.Run(() => {
-                    try {
-                        SonyDriver.GetInstance().SetFocusPosition(hCamera, (uint)position);
-                    } catch (Exception ex) {
-                        Logger.Error(ex);
-                    }
-
-                    _moving = false;
-                });
-            }
-            else
-            {
-                return Task.CompletedTask;
-            }
+            return Task.Run(() => {
+                Position = position;
+                _moving = false;
+            });
         }
 
         public void SendCommandBlind(string command, bool raw) {

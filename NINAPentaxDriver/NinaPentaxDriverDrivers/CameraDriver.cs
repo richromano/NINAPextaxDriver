@@ -558,25 +558,18 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             Settings.BulbModeEnable = false;
 
-                            while (true) {
-                                try {
-                                    _camera.GetCaptureSettings(
-                                        new List<CaptureSetting>() { exposureProgram });
-                                } catch {
-                                    throw new ASCOM.DriverException("Can't get capture settings.");
-                                }
+                            try {
+                                _camera.GetCaptureSettings(
+                                    new List<CaptureSetting>() { exposureProgram });
+                            } catch {
+                                throw new ASCOM.DriverException("Can't get capture settings.");
+                            }
 
-                                if (Settings.BulbModeEnable) {
-                                    if (exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Bulb))
-                                        break;
-                                    else
-                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to BULB");
-                                } else {
-                                    if (exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Manual))
-                                        break;
-                                    else
-                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL");
-                                }
+                            if (exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Bulb)) {
+                                Settings.BulbModeEnable = true;
+                            } else {
+                                if (!exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Manual))
+                                    throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL or BULB");
                             }
 
                             bool connect = _camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB);
@@ -590,13 +583,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             StorageWriting sw = new StorageWriting();
                             sw = Ricoh.CameraController.StorageWriting.False;
                             StillImageCaptureFormat sicf = new StillImageCaptureFormat();
-
-                            sicf = Ricoh.CameraController.StillImageCaptureFormat.JPEG;
-                            if (Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RAWBGR
-                                || Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RGGB)
-                                sicf = Ricoh.CameraController.StillImageCaptureFormat.DNG;
-                            StillImageQuality siq = new StillImageQuality();
-                            siq = Ricoh.CameraController.StillImageQuality.LargeBest;
+                            sicf = Ricoh.CameraController.StillImageCaptureFormat.DNG;
 
                             //ExposureProgram ep = new ExposureProgram();
                             //ep = Ricoh.CameraController.ExposureProgram.Bulb;
@@ -604,7 +591,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             LogCameraMessage(0, "Connected", "Setting capture setting");
                             try {
                                 _camera.SetCaptureSettings(new List<CaptureSetting>() { sw });
-                                _camera.SetCaptureSettings(new List<CaptureSetting>() { siq });
                                 _camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
                             } catch (Exception e) {
                                 LogCameraMessage(0, "Connected", e.Message.ToString());
@@ -1087,6 +1073,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 fs.Read(readData, 0, readData.Length);
 
                 var metaData = new ImageMetaData();
+
+                fs.Close();
+
+                while (!IsFileClosed(filename)) { }
+                File.Delete(filename);
+
 
                 return _exposureDataFactory.CreateRAWExposureData(
                     converter: _profileService.ActiveProfile.CameraSettings.RawConverter,
