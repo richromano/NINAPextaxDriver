@@ -66,11 +66,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         internal static string lastCaptureResponse = "None";
         internal static string canceledCaptureResponse = "None";
         internal static DateTime lastCaptureStartTime = DateTime.MinValue;
+        private ImageDataProcessor _imageDataProcessor;
 
         public CameraDriver(IProfileService profileService, IExposureDataFactory exposureDataFactory, PentaxKPProfile.DeviceInfo device) {
             _profileService = profileService;
             _exposureDataFactory = exposureDataFactory;
             _device = device;
+            _imageDataProcessor = new ImageDataProcessor();
         }
 
         #region Internal Helpers
@@ -512,14 +514,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                         SetupDialog();
                     }*/
 
+                    Settings.DeviceId = "PENTAX K-3 Mark III";
+
                     LogCameraMessage(0,"Connected", "Connecting...");
                     List<CameraDevice> detectedCameraDevices = CameraDeviceDetector.Detect(Ricoh.CameraController.DeviceInterface.USB);
                     //                            Thread.Sleep(500);
                     //                            detectedCameraDevices = CameraDeviceDetector.Detect(Ricoh.CameraController.DeviceInterface.USB);
                     LogCameraMessage(0, "Connected", "Number of detected cameras " + detectedCameraDevices.Count.ToString()+" "+Settings.DeviceId.ToString());
                     foreach (CameraDevice camera in detectedCameraDevices) {
-                        LogCameraMessage(0, "Connected", "Checking " + camera.Model.ToString() + "  " + "PENTAX K-3 Mark III");
-                        if (camera.Model == "PENTAX K-3 Mark III") {
+                        LogCameraMessage(0, "Connected", "Checking " + camera.Model.ToString() + "  " + Settings.DeviceId.ToString());
+                        if (camera.Model == Settings.DeviceId) {
                             _camera = camera;
                             break;
                         }
@@ -596,9 +600,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             //DriverCommon.m_camera.SetCaptureSettings(new List<CaptureSetting>() { ep });
                             LogCameraMessage(0, "Connected", "Setting capture setting");
                             try {
-                                _camera.SetCaptureSettings(new List<CaptureSetting>() { sw });
-                                _camera.SetCaptureSettings(new List<CaptureSetting>() { siq });
-                                _camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
+                                //_camera.SetCaptureSettings(new List<CaptureSetting>() { sw });
+                                //_camera.SetCaptureSettings(new List<CaptureSetting>() { siq });
+                                //_camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
                             } catch (Exception e) {
                                 LogCameraMessage(0, "Connected", e.Message.ToString());
                                 return false;
@@ -1036,39 +1040,69 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             //return;
         }
 
+        private bool IsFileClosed(string filePath) {
+            try {
+                using (var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)) {
+                    return true;
+                }
+            } catch {
+                return false;
+            }
+        }
+
+        private byte[] ReadImageFileRGGB(string MNewFile) {
+            object result = null;
+            //Bitmap _bmp;
+            //int MSensorWidthPx = DriverCommon.Settings.Info.ImageWidthPixels;
+            //int MSensorHeightPx = DriverCommon.Settings.Info.ImageHeightPixels;
+            // TODO: Should be returned based on image size
+            int[,] rgbImage;// = new int[MSensorWidthPx, MSensorHeightPx]; // Assuming this is declared and initialized elsewhere.
+
+
+            // Wait for the file to be closed and available.
+            while (!IsFileClosed(MNewFile)) { }
+            rgbImage = _imageDataProcessor.ReadRBBGPentax(MNewFile);
+
+            int scale = 1;
+
+            if (Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RAWBGR ||
+                Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RGGB)
+                scale = 4;
+
+            for (int y = 0; y < rgbImage.GetLength(1); y++) {
+                for (int x = 0; x < rgbImage.GetLength(0); x++) {
+                    rgbImage[x, y] = scale * rgbImage[x, y];
+                }
+            }
+
+            byte[] byteImage =new byte[rgbImage.GetLength(0)*rgbImage.GetLength(0)*sizeof(int)];
+
+            // TODO: Sharpcap problem
+            //result = Resize(rgbImage, 2, StartX, StartY, NumX, NumY);
+            return byteImage;
+        }
+
         public async Task WaitUntilExposureIsReady(CancellationToken token) {
             using (token.Register(AbortExposure)) {
-                uint[] completionStates = { CAPTURE_CANCELLED, CAPTURE_COMPLETE, CAPTURE_FAILED };
-
-        /*        SonyDriver driver = SonyDriver.GetInstance();
-
-                try {
-                    uint captureStatus = driver.GetCaptureStatus(_camera.Handle);
-                    Logger.Info($"Waiting for image to be ready, current state is {captureStatus}, completion states are {String.Join(", ", completionStates)}");
-
-                    while (!completionStates.Contains(captureStatus)) {
-                        await CoreUtil.Wait(TimeSpan.FromMilliseconds(100), token);
-                        captureStatus = driver.GetCaptureStatus(_camera.Handle);
-                    }
-
-                    Logger.Info($"Wait for image ready complete, completion state is {captureStatus}");
-                } catch (Exception ex) {
-                    Logger.Error("WaitUntilExposureIsReady got exception", ex);
-                    throw new SonyException("Problem while waiting for image to be ready (see log)");
-                }*/
+                while (m_captureState != CameraStates.Idle) {
+                    await CoreUtil.Wait(TimeSpan.FromMilliseconds(100), token);
+                }
             }
         }
 
         public Task<IExposureData> DownloadExposure(CancellationToken token) {
             return Task.Run<IExposureData>(() => {
-                byte[] rawImageData = { 0 };
+                string filename=imagesToProcess.Dequeue();
+
+
+                byte[] rawImageData = ReadImageFileRGGB(filename);
 
                 var metaData = new ImageMetaData();
 
                 return _exposureDataFactory.CreateRAWExposureData(
                     converter: _profileService.ActiveProfile.CameraSettings.RawConverter,
                     rawBytes: rawImageData,
-                    rawType: "arw",
+                    rawType: "dng",
                     bitDepth: this.BitDepth,
                     metaData: metaData);
             });
