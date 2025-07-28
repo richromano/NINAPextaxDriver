@@ -534,13 +534,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             LogCameraMessage(0,"Connected", "Connected. Model: " + _camera.Model + ", SerialNumber:" + _camera.SerialNumber);
                             Settings.DeviceId = _camera.Model;
 
-                            /*bool k3m3 = false;
+                            bool k3m3 = false;
 
                             if (_camera.Model.StartsWith("PENTAX K-3 Mark III")) {
                                 LogCameraMessage(0, "Connect", "Bulb mode not supported on K-3 Mark III");
                                 k3m3 = true;
-                                Settings.BulbModeEnable = false;
-                            }*/
+                                //Settings.BulbModeEnable = false;
+                            }
 
                             LiveViewSpecification liveViewSpecification = new LiveViewSpecification();
                             _camera.GetCameraDeviceSettings(
@@ -565,9 +565,15 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             if (exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Bulb)) {
                                 Settings.BulbModeEnable = true;
+                                if (k3m3)
+                                    throw new ASCOM.DriverException("BULB mode not supported in PENTAX K-3 Mark III");
                             } else {
-                                if (!exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Manual))
-                                    throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL or BULB");
+                                if (!exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Manual)) {
+                                    if (k3m3)
+                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL");
+                                    else
+                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL or BULB");
+                                }
                             }
 
                             bool connect = _camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB);
