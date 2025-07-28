@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.0.0.1")]
 
 // [MANDATORY] The name of your plugin
-[assembly: AssemblyTitle("NINA Pentax Driver")]
+[assembly: AssemblyTitle("Pentax Camera and Focuser Driver")]
 // [MANDATORY] A short description of your plugin
 [assembly: AssemblyDescription("Focuser and Camera Driver for Pentax SDK")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 // Your name
 [assembly: AssemblyCompany("RTG")]
 // The product name that this plugin is part of
-[assembly: AssemblyProduct("NINA Pentax Driver")]
+[assembly: AssemblyProduct("Pentax Driver")]
 [assembly: AssemblyCopyright("Copyright © 2025 RTG")]
 
 // The minimum Version of N.I.N.A. that this plugin is compatible with

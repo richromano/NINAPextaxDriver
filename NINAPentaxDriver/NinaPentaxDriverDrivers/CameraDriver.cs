@@ -503,23 +503,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public Task<bool> Connect(CancellationToken token) {
             return Task.Run<bool>(() => {
-                /*if (_camera != null) {
+                // TODO: disconnect when necessary
+                if (_camera != null) {
                     if (_camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB)) {
                         LogCameraMessage(0, "Connected", "Disconnecting first...");
                         _camera.Disconnect(Ricoh.CameraController.DeviceInterface.USB);
                     }
                     _camera = null;
-                }*/
+                }
 
                 if (_camera == null) {
-                    /*if (System.Diagnostics.Process.GetCurrentProcess().ProcessName == "SharpCap") {
-                        SetupDialog();
-                    }
-
-                    if (Settings.DeviceId == "") {
-                        SetupDialog();
-                    }*/
-
                     Settings.DeviceId = Name;
 
                     LogCameraMessage(0,"Connected", "Connecting...");
@@ -599,7 +592,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 _camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
                             } catch (Exception e) {
                                 LogCameraMessage(0, "Connected", e.Message.ToString());
-                                return false;
+                                throw new ASCOM.DriverException("Can't set capture settings.");
                             }
 
                             LogCameraMessage(0, "Connect", "Driver Version: 7/25/2025");
@@ -609,17 +602,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             Settings.UseLiveview = true;
 
-                            if (Settings.UseLiveview)
+                            if (Settings.UseLiveview) {
                                 _camera.StartLiveView();
+                                _camera.StopLiveView();
+                                _camera.StartLiveView();
+                            }
 
                             string deviceModel = Settings.DeviceId;
                             Settings.assignCamera(deviceModel);
                             MaxImageWidthPixels = Settings.Info.ImageWidthPixels; // Constants to define the ccd pixel dimension
                             MaxImageHeightPixels = Settings.Info.ImageHeightPixels;
-                            //StartX = 0;
-                            //StartY = 0;
-                            //NumX = MaxImageWidthPixels;
-                            //NumY = MaxImageHeightPixels;
 
                             Gain = gainIndex;
                             m_captureState = CameraStates.Idle;
