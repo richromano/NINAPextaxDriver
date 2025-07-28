@@ -7,6 +7,7 @@ using NINA.Core.Utility.Notification;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Model;
+using NINA.Equipment.Equipment;
 using NINA.Equipment.SDK.CameraSDKs.ASTPANSDK;
 using NINA.Equipment.Utility;
 using NINA.Image.ImageData;
@@ -30,6 +31,7 @@ using System.Xml;
 using static Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers.CameraProvider;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using String = System.String;
+using MyTelescope = NINA.Equipment.Equipment.MyTelescope;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class CameraDriver : BaseINPC, ICamera {
@@ -539,13 +541,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             LogCameraMessage(0,"Connected", "Connected. Model: " + _camera.Model + ", SerialNumber:" + _camera.SerialNumber);
                             Settings.DeviceId = _camera.Model;
 
-                            bool k3m3 = false;
+                            /*bool k3m3 = false;
 
                             if (_camera.Model.StartsWith("PENTAX K-3 Mark III")) {
                                 LogCameraMessage(0, "Connect", "Bulb mode not supported on K-3 Mark III");
                                 k3m3 = true;
                                 Settings.BulbModeEnable = false;
-                            }
+                            }*/
 
                             LiveViewSpecification liveViewSpecification = new LiveViewSpecification();
                             _camera.GetCameraDeviceSettings(
@@ -685,22 +687,83 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             throw new ASCOM.NotImplementedException("SetupDialog is not implemented for this camera driver.");
         }
 
+        private bool ConnectTelescope() {
+            bool success = false;
+
+            var type = _telescopeMediator.GetType();
+            var GetInfo = type.GetMethod("GetInfo");
+            DeviceInfo info = (DeviceInfo)GetInfo.Invoke(_telescopeMediator, null);
+
+            if (!info.Connected) {
+                var Rescan = type.GetMethod("Rescan");
+                Rescan.Invoke(_telescopeMediator, null);
+
+                var Connect = type.GetMethod("Connect");
+                Connect.Invoke(_telescopeMediator, null);
+
+                DeviceInfo infoAfterConnect = (DeviceInfo)GetInfo.Invoke(_telescopeMediator, null);
+                success = infoAfterConnect.Connected;
+
+                if (!info.Name.Equals("")) { }
+
+                if (success) {
+                    Logger.Info($"{info.Name} has been connected");
+                }
+            } else {
+                success = true;
+                Logger.Info($"{info.Name} is already connected");
+            }
+
+            return success;
+        }
+
         private void RequestSnapPortCaptureStart() {
-            Logger.Debug("Request start of exposure");
-            var success = _telescopeMediator.SendToSnapPort(true);
+            Logger.Info("Request start of exposure");
+            bool success = ConnectTelescope();
+            if (!success) {
+                throw new Exception("Request to connect telescope failed");
+            }
+
+            var type = _telescopeMediator.GetType();
+            var STSP = type.GetMethod("SendToSnapPort");
+            object[] parameters = { true };
+            Logger.Info("Request send to snap port");
+            success = (bool)STSP.Invoke(_telescopeMediator, parameters);
+
             if (!success) {
                 throw new Exception("Request to telescope snap port failed");
             }
         }
 
         private void RequestSnapPortCaptureStop() {
-            Logger.Debug("Request stop of exposure");
-            var success = _telescopeMediator.SendToSnapPort(false);
+            Logger.Info("Request stop of exposure");
+
+            var type = _telescopeMediator.GetType();
+            var STSP = type.GetMethod("SendToSnapPort");
+            object[] parameters = { false };
+            bool success = (bool)STSP.Invoke(_telescopeMediator, parameters);
+
             if (!success) {
                 throw new Exception("Request to telescope snap port failed");
             }
         }
 
+        private CancellationTokenSource bulbCompletionCTS = null;
+
+        private void BulbCapture(double exposureTime, Action capture, Action stopCapture) {
+            Logger.Debug("Starting bulb capture");
+            capture();
+
+            /**Stop Exposure after exposure time or upon cancellation*/
+            try { bulbCompletionCTS?.Cancel(); } catch { }
+            bulbCompletionCTS = new CancellationTokenSource();
+            Task.Run(async () => {
+                await CoreUtil.Wait(TimeSpan.FromSeconds(exposureTime), bulbCompletionCTS.Token);
+                if (!bulbCompletionCTS.IsCancellationRequested) {
+                    stopCapture();
+                }
+            }, bulbCompletionCTS.Token);
+        }
 
         public void StartExposure(CaptureSequence sequence) {
             if (_camera != null) {
@@ -719,6 +782,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                     imagesToProcess.Clear();
                     m_captureState = CameraStates.Exposing;
+                    BulbCapture(Duration, RequestSnapPortCaptureStart, RequestSnapPortCaptureStop);
                     return;
                 }
 
