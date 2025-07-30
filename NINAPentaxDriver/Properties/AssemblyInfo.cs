@@ -13,7 +13,7 @@ using System.Runtime.InteropServices;
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("Pentax Camera and Focuser Driver")]
 // [MANDATORY] A short description of your plugin
-[assembly: AssemblyDescription("Focuser and Camera Driver for Pentax SDK")]
+[assembly: AssemblyDescription("Focuser and Camera Driver for Pentax SDK: K-1 K-1ii KP 645Z K-3iii")]
 
 // The following attributes are not required for the plugin per se, but are required by the official manifest meta data
 

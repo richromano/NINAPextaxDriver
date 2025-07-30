@@ -565,14 +565,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             if (exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Bulb)) {
                                 Settings.BulbModeEnable = true;
-                                if (k3m3)
-                                    throw new ASCOM.DriverException("BULB mode not supported in PENTAX K-3 Mark III");
                             } else {
                                 if (!exposureProgram.Equals(Ricoh.CameraController.ExposureProgram.Manual)) {
-                                    if (k3m3)
-                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL");
-                                    else
-                                        throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL or BULB");
+                                   throw new ASCOM.DriverException("Set the Camera Exposure Program to MANUAL or BULB");
                                 }
                             }
 

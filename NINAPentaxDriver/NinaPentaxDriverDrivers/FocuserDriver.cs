@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
+using Accord;
 using Castle.Components.DictionaryAdapter.Xml;
 using FTD2XX_NET;
 using Google.Protobuf.WellKnownTypes;
@@ -78,7 +79,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public bool HasSetupDialog => false;
 
-        public string Id { get => "One"; }
+        public string Id { get => "Pentax Lens"; }
 
         public string Name { get => "Pentax Lens"; }
 
@@ -112,6 +113,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                _moving = true;
                 _currentPosition = 10000;
                 _connected = _cameraMediator.SendCommandBool($"SetPosition {-_currentPosition}");
+                if (!_connected)
+                    throw new NotConnectedException("Camera not connected.  Connect camera first.");
                 _moving = false;
                 return _connected;
             });
