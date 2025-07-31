@@ -2,11 +2,11 @@
 
 Currently tested with KP and K3-III. Should also work with K1, K1ii, and 645Z.  Maybe KF and K70.
 
-When connecting always make sure that the camera is connected first and then connect the focuser.  Always disconnect the focuser first then the camera.  If you don't follow these steps then you will get the error: MISSING LABEL for SetPosition.
+Make sure your camera is in MTP/PTP mode.  Turn on Electronic Shutter if desired.  When connecting always make sure that the camera is connected first and then connect the focuser.  Always disconnect the focuser first then the camera.  If you don't follow these steps then you will get the error: MISSING LABEL for SetPosition.
 
 If your computer is sluggish after installation, you should reboot because N.I.N.A. is in a weird state.
 
-The software supports both Manual and Bulb modes.  No other modes are supported.  The software will check to make sure it is in one of the two modes during connection.  Once connected disconnect before switching modes since the software does not check for mode changes once it is connected. 
+The software supports both Manual and Bulb modes.  No other modes are supported.  The software will check to make sure it is in one of the two modes during connection.  Once connected disconnect before switching modes since the software does not check for mode changes once it is connected. When in Bulb mode make sure it is not in timer setting but in true Bulb mode.  Typically you press the Green button to toggle between them.
 
 The focuser speaks to the autofocus lens to change focus.  If keeps LiveView active to allow focusing with the Ricoh SDK.
 
