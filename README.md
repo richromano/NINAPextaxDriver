@@ -1,10 +1,8 @@
 ﻿# Pentax Camera Plugin
 
-Currently tested with KP and K3-III. Should also work with K1, K1ii, 645Z.  Maybe KF and K70
+Currently tested with KP and K3-III. Should also work with K1, K1ii, and 645Z.  Maybe KF and K70.
 
-When connecting always make sure that the camera is connected first and then connect the focuser.
-
-Always disconnect the focuser first then the camera.  If you don't follow these steps then you will get errors MISSING LABEL for SetPosition.
+When connecting always make sure that the camera is connected first and then connect the focuser.  Always disconnect the focuser first then the camera.  If you don't follow these steps then you will get the error: MISSING LABEL for SetPosition.
 
 If your computer is sluggish after installation, you should reboot because N.I.N.A. is in a weird state.
 
