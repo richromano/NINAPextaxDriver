@@ -12,3 +12,5 @@ If you want to use Bulb mode you need to connect a shutter release cable from th
 https://nighttime-imaging.eu/docs/master/site/advanced/bulbshutter/
 
 Note that your mount needs an ASCOM driver that supports triggering the SNAP port.  EQMOD does this.
+
+Any issues please reach out on the Discussions board.
