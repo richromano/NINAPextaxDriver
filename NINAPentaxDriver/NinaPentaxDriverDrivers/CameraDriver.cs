@@ -4,10 +4,10 @@ using NINA.Core.Enum;
 using NINA.Core.Model.Equipment;
 using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
+using NINA.Equipment.Equipment;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Model;
-using NINA.Equipment.Equipment;
 using NINA.Equipment.SDK.CameraSDKs.ASTPANSDK;
 using NINA.Equipment.Utility;
 using NINA.Image.ImageData;
@@ -20,18 +20,24 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Ink;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Xml;
 using static Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers.CameraProvider;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using String = System.String;
 using MyTelescope = NINA.Equipment.Equipment.MyTelescope;
+using String = System.String;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class CameraDriver : BaseINPC, ICamera {
@@ -55,7 +61,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private IProfileService _profileService;
         private readonly IExposureDataFactory _exposureDataFactory;
         private ITelescopeMediator _telescopeMediator;
-        private bool _liveViewEnabled;
         private short _readoutModeForSnapImages;
         private short _readoutModeForNormalImages;
         private AsyncObservableCollection<BinningMode> _binningModes;
@@ -67,12 +72,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private int gainIndex;
         public static CameraStates m_captureState = CameraStates.Error;
         public static bool LastSetFastReadout;
+
         internal static Queue<String> imagesToProcess = new Queue<string>();
         internal static Queue<BitmapImage> bitmapsToProcess = new Queue<BitmapImage>();
+        internal static int m_readoutmode = 0;
         internal static double previousDuration = 0;
         internal static string lastCaptureResponse = "None";
         internal static string canceledCaptureResponse = "None";
         internal static DateTime lastCaptureStartTime = DateTime.MinValue;
+
+        private SerialRelayInteraction serialRelayInteraction;
 
         public CameraDriver(IProfileService profileService, ITelescopeMediator telescopeMediator, IExposureDataFactory exposureDataFactory, PentaxKPProfile.DeviceInfo device) {
             _profileService = profileService;
@@ -114,7 +123,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 bitmapImage.BeginInit();
                 bitmapImage.StreamSource = memoryStream;
                 bitmapImage.EndInit();
-                if (LastSetFastReadout && m_captureState == CameraStates.Exposing) {
+                if (LastSetFastReadout){// && m_captureState == CameraStates.Exposing) {
                     bitmapsToProcess.Enqueue(bitmapImage);
                     m_captureState = CameraStates.Idle;
                     LogCameraMessage(1,"", "Enqueued LiveView Image");
@@ -255,7 +264,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public bool CanSetTemperature => false;
 
-        public CameraStates CameraState => CameraStates.NoState; // TODO
+        public CameraStates CameraState => m_captureState; // TODO
 
         public bool CanShowLiveView {
             get {
@@ -264,11 +273,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         public bool LiveViewEnabled {
-            get => _liveViewEnabled;
-            set {
-                _liveViewEnabled = value;
-                RaisePropertyChanged();
-            }
+            get => FastReadout;
         }
 
         public bool HasBattery => true;
@@ -276,22 +281,22 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         public int BatteryLevel {
             get {
                 // TODO: Fix
-                return 100;
+                if (_camera == null)
+                    return 0;
+
+                return (int)_camera.Status.BatteryLevel;
             }
         }
 
         public int BitDepth {
             get {
-                int bpp = 8;
-                if (Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RGGB || Settings.DefaultReadoutMode == PentaxKPProfile.OUTPUTFORMAT_RAWBGR)
-                    bpp = 16;
-                return bpp;
+                return 16;
             }
         }
 
         public bool CanGetGain {
             get {
-               return false;
+               return true;
             }
         }
 
@@ -399,7 +404,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public string DriverInfo => "https://github.com/richromano/NINAPextaxDriver";
 
-        public string DriverVersion => string.Empty;
+        public string DriverVersion => "8/3/2025";
 
         public double TemperatureSetPoint {
             get => double.NaN;
@@ -455,11 +460,98 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public double ElectronsPerADU => double.NaN;
 
-        public IList<string> ReadoutModes => new List<string> { "Default" };
+        public IList<string> ReadoutModes => new List<string> { "Full Resolution" };
 
         public short ReadoutMode {
-            get => 0;
-            set { }
+            get {
+                //using (new SerializedAccess(this, "get_ReadoutMode"))
+                {
+                    LogCameraMessage(0, "", "get_ReadoutMode");
+                    return (short)m_readoutmode;
+                }
+            }
+            set {
+                //using (new DriverCommon.SerializedAccess("set_ReadoutMode"))
+                {
+                    LogCameraMessage(0, "", "ReadoutMode Set " + value.ToString());
+                    if (m_captureState != CameraStates.Idle)
+                        throw new ASCOM.InvalidOperationException("Call to set_ReadoutMode when camera not Idle!");
+
+                    if (ReadoutModes.Count > value) {
+                        switch (value) {
+                            case 0:
+                                FastReadout = false;
+                                m_readoutmode = 0;
+                                if (Settings.UseLiveview)
+                                    _camera.StartLiveView();
+                                MaxImageWidthPixels = Settings.Info.ImageWidthPixels; // Constants to define the ccd pixel dimenstion
+                                MaxImageHeightPixels = Settings.Info.ImageHeightPixels;
+                                //StartX = 0;
+                                //StartY = 0;
+                                //NumX = MaxImageWidthPixels;
+                                //NumY = MaxImageHeightPixels;
+                                break;
+
+                            case 1:
+                                m_readoutmode = 1;
+                                FastReadout = true;
+                                MaxImageWidthPixels = Settings.Info.LiveViewWidthPixels; // Constants to define the ccd pixel dimenstion
+                                MaxImageHeightPixels = Settings.Info.LiveViewHeightPixels;
+                                //StartX = 0;
+                                //StartY = 0;
+                                //NumX = MaxImageWidthPixels;
+                                //NumY = MaxImageHeightPixels;
+                                break;
+                        }
+                    } else {
+                        throw new ASCOM.InvalidValueException("ReadoutMode not in allowable values");
+                    }
+                }
+            }
+        }
+
+        public bool FastReadout {
+            // This is called by set_mode if the mode includes FastReadout
+            get {
+                //using (new SerializedAccess(this, "get_FastReadout"))
+                {
+                    LogCameraMessage(0, "", "get_FastReadout");
+                    return LastSetFastReadout;
+                }
+            }
+            set {
+                //using (new DriverCommon.SerializedAccess("set_FastReadout", false))
+                {
+                    LogCameraMessage(0, "", "set_FastReadout");
+                    if (m_captureState != CameraStates.Idle)
+                        throw new ASCOM.InvalidOperationException("Call to set_FastReadout when camera not Idle!");
+
+                    if (LastSetFastReadout) {
+                        if (!value) {
+                            LastSetFastReadout = false;
+                            // TODO: Review?
+                            _camera.StopLiveView();
+                            Thread.Sleep(500);
+                            // Need to clear because the expected format has changed
+                            bitmapsToProcess.Clear();
+                            //imagesToProcess.Clear();
+                            if (Settings.UseLiveview)
+                                _camera.StartLiveView();
+                        }
+                        //else
+                        //In FastReadout we don't do any real captures so cancel the current one
+                        //StopThreadCapture();
+                    } else {
+                        if (value) {
+                            _camera.StartLiveView();
+                            // Need to clear because the expected format has changed
+                            //StopThreadCapture();
+                            imagesToProcess.Clear();
+                        }
+                    }
+                    LastSetFastReadout = value;
+                }
+            }
         }
 
         public short ReadoutModeForSnapImages {
@@ -494,11 +586,11 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         #region Supported Methods
 
         public void StartLiveView(CaptureSequence sequence) {
-            LiveViewEnabled = true;
+            FastReadout = true;
         }
 
         public void StopLiveView() {
-            LiveViewEnabled = false;
+            FastReadout = false;
         }
 
         public Task<bool> Connect(CancellationToken token) {
@@ -534,13 +626,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             LogCameraMessage(0,"Connected", "Connected. Model: " + _camera.Model + ", SerialNumber:" + _camera.SerialNumber);
                             Settings.DeviceId = _camera.Model;
 
-                            bool k3m3 = false;
+                            /*bool k3m3 = false;
 
                             if (_camera.Model.StartsWith("PENTAX K-3 Mark III")) {
                                 LogCameraMessage(0, "Connect", "Bulb mode not supported on K-3 Mark III");
                                 k3m3 = true;
                                 //Settings.BulbModeEnable = false;
-                            }
+                            }*/
 
                             LiveViewSpecification liveViewSpecification = new LiveViewSpecification();
                             _camera.GetCameraDeviceSettings(
@@ -646,32 +738,110 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 _camera = null;
                 LogCameraMessage(0,"Connected", "Closed connection to camera");
             }
+
+            serialRelayInteraction?.Dispose();
+            serialRelayInteraction = null;
+        }
+
+        private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage) {
+            // BitmapImage bitmapImage = new BitmapImage(new Uri("../Images/test.png", UriKind.Relative));
+
+            using (MemoryStream outStream = new MemoryStream()) {
+                BitmapEncoder enc = new BmpBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                enc.Save(outStream);
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+
+                return new Bitmap(bitmap);
+            }
+        }
+
+        private ushort[] ReadImageQuick(BitmapImage image, ref int pixelWidth, ref int pixelHeight) {
+            Bitmap _bmp = BitmapImage2Bitmap(image);
+            // Lock the bitmap's bits.
+            Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
+            BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite, _bmp.PixelFormat);
+            int[,,] _cameraImageArray = new int[_bmp.Width , _bmp.Height, 3]; // Assuming this is declared and initialized elsewhere.
+
+
+            IntPtr ptr = bmpData.Scan0;
+
+            int stride = bmpData.Stride;
+            int width = _bmp.Width;
+            int height = _bmp.Height;
+
+            //Format32BppArgb Given X and Y coordinates,  the address of the first element in the pixel is Scan0+(y * stride)+(x*4).
+            //This Points to the blue byte. The following three bytes contain the green, red and alpha bytes.
+
+            //Format24BppRgb Given X and Y coordinates, the address of the first element in the pixel is Scan0+(y*Stride)+(x*3). 
+            //This points to the blue byte which is followed by the green and the red.
+
+            int scale = 1;
+
+            scale = 256;
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    _cameraImageArray[x, y, 0] = scale * Marshal.ReadByte(ptr, (stride * y) + (4 * x));
+                    _cameraImageArray[x, y, 1] = scale * Marshal.ReadByte(ptr + 1, (stride * y) + (4 * x));
+                    _cameraImageArray[x, y, 2] = scale * Marshal.ReadByte(ptr + 2, (stride * y) + (4 * x));
+                }
+            }
+
+            ushort[] _cameraImageArray2 = new ushort[_bmp.Width*_bmp.Height]; // Assuming this is declared and initialized elsewhere.
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    if (y % 2 == 0 && x % 2 == 0)
+                        // Red
+                        _cameraImageArray2[x+y*width] = (ushort)_cameraImageArray[x, y, 2];
+                    if (y % 2 == 0 && x % 2 == 1)
+                        // Green
+                        _cameraImageArray2[x+y*width] = (ushort)_cameraImageArray[x, y, 1];
+                    if (y % 2 == 1 && x % 2 == 0)
+                        // Green
+                        _cameraImageArray2[x+y*width] = (ushort)_cameraImageArray[x, y, 1];
+                    if (y % 2 == 1 && x % 2 == 1)
+                        // Blue
+                        _cameraImageArray2[x+y*width] = (ushort)_cameraImageArray[x, y, 0];
+                }
+            }
+
+            // Unlock the bits.
+            _bmp.UnlockBits(bmpData);
+
+            pixelHeight = _bmp.Height;
+            pixelWidth = _bmp.Width;
+
+            return _cameraImageArray2;
         }
 
         public Task<IExposureData> DownloadLiveView(CancellationToken token) {
             return Task.Run<IExposureData>(() => {
   /*              using (var memStream = new MemoryStream(SonyDriver.GetInstance().GetLiveView(_camera.Handle)))*/ {
-/*                    memStream.Position = 0;
+                    /*                    memStream.Position = 0;
 
-                    JpegBitmapDecoder decoder = new JpegBitmapDecoder(memStream, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnLoad);*/
+                                        JpegBitmapDecoder decoder = new JpegBitmapDecoder(memStream, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnLoad);*/
 
-                    FormatConvertedBitmap bitmap = new FormatConvertedBitmap();
-                    bitmap.BeginInit();
-//                    bitmap.Source = decoder.Frames[0];
-                    bitmap.DestinationFormat = System.Windows.Media.PixelFormats.Gray16;
-                    bitmap.EndInit();
+                    //FormatConvertedBitmap bitmap = new FormatConvertedBitmap();
+                    while (bitmapsToProcess.Count == 0)
+                        Thread.Sleep(100);
 
-                    ushort[] outArray = new ushort[bitmap.PixelWidth * bitmap.PixelHeight];
-                    bitmap.CopyPixels(outArray, 2 * bitmap.PixelWidth, 0);
+                    BitmapImage bitmap=bitmapsToProcess.Dequeue();
+
+                    int pixelWidth=0;
+                    int pixelHeight=0;
+
+                    ushort[] outArray = ReadImageQuick(bitmap, ref pixelWidth, ref pixelHeight);
 
                     var metaData = new ImageMetaData();
 
                     return _exposureDataFactory.CreateImageArrayExposureData(
                             input: outArray,
-                            width: bitmap.PixelWidth,
-                            height: bitmap.PixelHeight,
+                            width: pixelWidth,
+                            height: pixelHeight,
                             bitDepth: 16,
-                            isBayered: false,
+                            isBayered: true,
                             metaData: metaData);
                 }
             });
@@ -728,6 +898,27 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }
         }
 
+        private void OpenSerialRelay() {
+            if (serialRelayInteraction?.PortName != _profileService.ActiveProfile.CameraSettings.SerialPort) {
+                serialRelayInteraction = new SerialRelayInteraction(_profileService.ActiveProfile.CameraSettings.SerialPort);
+            }
+            if (!serialRelayInteraction.Open()) {
+                throw new Exception("Unable to open SerialPort " + _profileService.ActiveProfile.CameraSettings.SerialPort);
+            }
+        }
+
+        private void StartSerialRelayCapture() {
+            Logger.Debug("Serial relay start of exposure");
+            OpenSerialRelay();
+            serialRelayInteraction.Send(new byte[] { 0xFF, 0x01, 0x01 });
+        }
+
+        private void StopSerialRelayCapture() {
+            Logger.Debug("Serial relay stop of exposure");
+            OpenSerialRelay();
+            serialRelayInteraction.Send(new byte[] { 0xFF, 0x01, 0x00 });
+        }
+
         private void RequestSnapPortCaptureStop() {
             Logger.Info("Request stop of exposure");
 
@@ -775,7 +966,15 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                     imagesToProcess.Clear();
                     m_captureState = CameraStates.Exposing;
-                    BulbCapture(Duration, RequestSnapPortCaptureStart, RequestSnapPortCaptureStop);
+                    if (_profileService.ActiveProfile.CameraSettings.BulbMode == CameraBulbModeEnum.TELESCOPESNAPPORT) {
+                        BulbCapture(Duration, RequestSnapPortCaptureStart, RequestSnapPortCaptureStop);
+                    } else if (_profileService.ActiveProfile.CameraSettings.BulbMode == CameraBulbModeEnum.SERIALRELAY) {
+                        BulbCapture(Duration, StartSerialRelayCapture, StopSerialRelayCapture);
+                    } else {
+
+                        throw new InvalidValueException("StartExposure", "Bulb Mode Capture", "SERIALRELAY or TELESCOPESNAPPORT");
+                    }
+
                     return;
                 }
 
@@ -897,8 +1096,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     shutterSpeed = ShutterSpeed.SS1_5;
                 if (Duration > 1.0 / 4.0 - 0.000001)
                     shutterSpeed = ShutterSpeed.SS1_4;
+                if (Duration > 3.0 / 10.0 - 0.000001)
+                    shutterSpeed = ShutterSpeed.SS3_10;
                 if (Duration > 1.0 / 3.0 - 0.000001)
                     shutterSpeed = ShutterSpeed.SS1_3;
+                if (Duration > 4.0 / 10.0 - 0.000001)
+                    shutterSpeed = ShutterSpeed.SS4_10;
                 if (Duration > 1.0 / 2.0 - 0.000001)
                     shutterSpeed = ShutterSpeed.SS1_2;
                 if (Duration > 6.0 / 10.0 - 0.000001)
@@ -921,8 +1124,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 //public static readonly ShutterSpeed SS10_25;
                 //public static readonly ShutterSpeed SS25_10;
                 //public static readonly ShutterSpeed SS32_10;
-                //public static readonly ShutterSpeed SS3_10;
-                //public static readonly ShutterSpeed SS4_10;
                 //public static readonly ShutterSpeed SS5_10;
                 if (Duration > 1.99)
                     shutterSpeed = ShutterSpeed.SS2;
