@@ -829,6 +829,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                     BitmapImage bitmap=bitmapsToProcess.Dequeue();
 
+                    while (bitmapsToProcess.Count > 0)
+                        bitmap=bitmapsToProcess.Dequeue();
+
                     int pixelWidth=0;
                     int pixelHeight=0;
 
