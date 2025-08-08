@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
-using Accord;
+﻿using Accord;
 using Castle.Components.DictionaryAdapter.Xml;
 using FTD2XX_NET;
 using Google.Protobuf.WellKnownTypes;
@@ -19,6 +10,7 @@ using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Equipment.MyGuider.PHD2;
+using NINA.Equipment.Equipment;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Model;
@@ -28,7 +20,17 @@ using NINA.Image.ImageData;
 using NINA.Image.Interfaces;
 using NINA.Profile;
 using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Mediator;
 using Ricoh.CameraController;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class FocuserDriver : IFocuser, IDisposable {
@@ -90,7 +92,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         public bool Connected {
             get {
                 // TODO: Check that the camera is still open, if it is closed, then we are also closed
-                return _cameraMediator.SendCommandBool($"SetPosition {0}");
+                if (!IsCameraConnected())
+                    return false;
+
+                return true;
 
             }
         }
@@ -107,8 +112,25 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             throw new NotImplementedException();
         }
 
+        private bool IsCameraConnected() {
+            var type = _cameraMediator.GetType();
+            var GetInfo = type.GetMethod("GetInfo");
+            DeviceInfo info = (DeviceInfo)GetInfo.Invoke(_cameraMediator, null);
+
+            if (!info.Connected) {
+                return false;
+            }
+
+            return true;
+        }
+
         public Task<bool> Connect(CancellationToken token) {
             return Task<bool>.Run(() => {
+                if (!IsCameraConnected()) {
+                    throw new NotConnectedException("Camera not connected.  Connect camera first.");
+                    //return false;
+                }
+
                _connected = true;
                _moving = true;
                 _currentPosition = 10000;
@@ -126,10 +148,17 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         public void Halt() {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return;
         }
 
         public Task Move(int position, CancellationToken ct, int waitInMs) {
+            if(!_connected)
+                throw new NotConnectedException("Focuser not connected.");
+
+            if(!IsCameraConnected())
+                throw new NotConnectedException("Camera not connected.  Connect camera first.");
+
             _moving = true;
 
             return Task.Run(() => {
