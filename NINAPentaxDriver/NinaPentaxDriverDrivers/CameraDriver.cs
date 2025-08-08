@@ -364,9 +364,14 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 LogCameraMessage(0,"", "get_Gains");
 
-                for (int i=0;i<6;i++) {
-                     gains.Add(i);
-                }
+                //for (int i=0;i<6;i++) {
+                gains.Add(100);
+                gains.Add(200);
+                gains.Add(400);
+                gains.Add(800);
+                gains.Add(1600);
+                gains.Add(3200);
+                //}
 
                 return gains;
             }
@@ -900,6 +905,27 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 throw new Exception("Request to telescope snap port failed");
             }
         }
+        private void StartBulbCapture() {
+            Logger.Debug("Bulb start of exposure");
+            StartCaptureResponse response = _camera.StartCapture(false);
+            if (response.Result == Result.OK) {
+                lastCaptureResponse = response.Capture.ID;
+                lastCaptureStartTime = DateTime.Now;
+                // Make sure we don't change a reading to exposing
+                if (m_captureState == CameraStates.Waiting)
+                    m_captureState = CameraStates.Exposing;
+            } else {
+                lastCaptureResponse = "None";
+                m_captureState = CameraStates.Error;
+                LogCameraMessage(0, "StartExposure", "Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button");
+                throw new ASCOM.InvalidOperationException("Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button");
+            }
+        }
+
+        private void StopBulbCapture() {
+            Logger.Debug("Bulb stop of exposure");
+            _camera.StopCapture();
+        }
 
         private void OpenSerialRelay() {
             if (serialRelayInteraction?.PortName != _profileService.ActiveProfile.CameraSettings.SerialPort) {
@@ -963,25 +989,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     throw new InvalidValueException("StartExposure", "Duration", " > 0");
                 }
 
-                if (Settings.BulbModeEnable) {
-                    if (m_captureState != CameraStates.Idle)
-                        throw new InvalidValueException("StartExposure", "CameraState", "Not idle");
-
-                    imagesToProcess.Clear();
-                    m_captureState = CameraStates.Exposing;
-                    if (_profileService.ActiveProfile.CameraSettings.BulbMode == CameraBulbModeEnum.TELESCOPESNAPPORT) {
-                        BulbCapture(Duration, RequestSnapPortCaptureStart, RequestSnapPortCaptureStop);
-                    } else if (_profileService.ActiveProfile.CameraSettings.BulbMode == CameraBulbModeEnum.SERIALRELAY) {
-                        BulbCapture(Duration, StartSerialRelayCapture, StopSerialRelayCapture);
-                    } else {
-
-                        throw new InvalidValueException("StartExposure", "Bulb Mode Capture", "SERIALRELAY or TELESCOPESNAPPORT");
-                    }
-
-                    return;
-                }
-
-
                 // Light or dark frame
                 // TODO:  I think we need to update the state back and forth for LastSetFastReadout
                 //          using (new DriverCommon.SerializedAccess("StartExposure()"))
@@ -999,6 +1006,21 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     }
 
                     m_captureState = CameraStates.Exposing;
+                    previousDuration = Duration;
+                    return;
+                }
+
+                if (Settings.BulbModeEnable) {
+                    imagesToProcess.Clear();
+                    m_captureState = CameraStates.Exposing;
+                    if (_profileService.ActiveProfile.CameraSettings.BulbMode == CameraBulbModeEnum.TELESCOPESNAPPORT) {
+                        BulbCapture(Duration, RequestSnapPortCaptureStart, RequestSnapPortCaptureStop);
+                    } else if (_profileService.ActiveProfile.CameraSettings.BulbMode == CameraBulbModeEnum.SERIALRELAY) {
+                        BulbCapture(Duration, StartSerialRelayCapture, StopSerialRelayCapture);
+                    } else {
+                        BulbCapture(Duration, StartBulbCapture, StopBulbCapture);
+                    }
+
                     previousDuration = Duration;
                     return;
                 }
