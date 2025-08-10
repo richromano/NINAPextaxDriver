@@ -41,21 +41,6 @@ using String = System.String;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class CameraDriver : BaseINPC, ICamera {
-        // Some camera settings we are interested in
-        private const uint PROPID_BATTERY     = 53784;
-        private const uint PROPID_ISO         = 53790;  // Actual ISO currently set
-        private const uint PROPID_ISOS        = 65534; // List of learnt ISOs this camera supports
-
-        // Capture Status
-        private const uint CAPTURE_CREATED    = 0x0000;
-        private const uint CAPTURE_CAPTURING  = 0x0001;
-        private const uint CAPTURE_FAILED     = 0x0002;
-        private const uint CAPTURE_CANCELLED  = 0x0003;
-        private const uint CAPTURE_COMPLETE   = 0x0004;
-        private const uint CAPTURE_STARTING   = 0x8001;
-        private const uint CAPTURE_READING    = 0x8002;
-        private const uint CAPTURE_PROCESSING = 0x8003;
-
         private static Ricoh.CameraController.CameraDevice _camera = null;
         private PentaxKPProfile.DeviceInfo _device;
         private IProfileService _profileService;
@@ -69,7 +54,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private static int MaxImageWidthPixels;
         private static int MaxImageHeightPixels;
         private static PentaxKPProfile Settings = new PentaxKPProfile();
-        private int gainIndex;
+        private int gainValue;
         public static CameraStates m_captureState = CameraStates.Error;
         public static bool LastSetFastReadout;
 
@@ -304,46 +289,48 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public int GainMax {
             get {
-                return 5;
+                return 6400;
             }
         }
 
         public int GainMin {
             get {
-                return 0;
+                return 100;
             }
         }
 
         public int Gain {
             get {
-                return gainIndex;
+                return gainValue;
             }
 
             set {
                 LogCameraMessage(0,"", "set_Gain "+value.ToString());
-                gainIndex = value;
-                if (gainIndex < 0)
-                    gainIndex = 0;
-                if (gainIndex > 5)
-                    gainIndex = 5;
+                gainValue = value;
+                if (gainValue < 100)
+                    gainValue = 100;
+                if (gainValue > 6400)
+                    gainValue = 6400;
                 //using (new DriverCommon.SerializedAccess("get_Gain"))
                 {
                     // TODO: Can I set this any time?  Do we need more?
                     // TODO: Save time and what else to return later
                     if (_camera != null) {
                         ISO iso = new ISO();
-                        if (gainIndex == 0)
+                        if (gainValue == 100)
                             iso = ISO.ISO100;
-                        if (gainIndex == 1)
+                        if (gainValue == 200)
                             iso = ISO.ISO200;
-                        if (gainIndex == 2)
+                        if (gainValue == 400)
                             iso = ISO.ISO400;
-                        if (gainIndex == 3)
+                        if (gainValue == 800)
                             iso = ISO.ISO800;
-                        if (gainIndex == 4)
+                        if (gainValue == 1600)
                             iso = ISO.ISO1600;
-                        if (gainIndex == 5)
+                        if (gainValue == 3200)
                             iso = ISO.ISO3200;
+                        if (gainValue == 6400)
+                            iso = ISO.ISO6400;
                         _camera.SetCaptureSettings(new List<CaptureSetting>() { iso });
                     }
                 }
@@ -353,25 +340,15 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         public IList<int> Gains {
             get {
                 List<int> gains = new List<int>();
-/*                gainIndex = 0;
-                m_gains = new ArrayList();
-                m_gains.Add("ISO 100");
-                m_gains.Add("ISO 200");
-                m_gains.Add("ISO 400");
-                m_gains.Add("ISO 800");
-                m_gains.Add("ISO 1600");
-                m_gains.Add("ISO 3200");*/
-
                 LogCameraMessage(0,"", "get_Gains");
 
-                //for (int i=0;i<6;i++) {
                 gains.Add(100);
                 gains.Add(200);
                 gains.Add(400);
                 gains.Add(800);
                 gains.Add(1600);
                 gains.Add(3200);
-                //}
+                gains.Add(6400);
 
                 return gains;
             }
@@ -711,7 +688,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             MaxImageWidthPixels = Settings.Info.ImageWidthPixels; // Constants to define the ccd pixel dimension
                             MaxImageHeightPixels = Settings.Info.ImageHeightPixels;
 
-                            Gain = gainIndex;
+                            Gain = 100;
                             m_captureState = CameraStates.Idle;
 
                             if (_camera.EventListeners.Count == 0)
