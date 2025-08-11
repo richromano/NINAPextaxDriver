@@ -17,14 +17,6 @@
                     VerticalAlignment="Center"
                     Text="Telescope not connected" />
             </Grid>
-            <Grid Visibility="{Binding TelescopeInfo.Connected, Converter={StaticResource VisibilityConverter}}">
-                <Grid Visibility="{Binding TelescopeInfo.TrackingEnabled, Converter={StaticResource InverseBooleanToVisibilityCollapsedConverter}}">
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Text="Telescope not tracking" />
-                </Grid>
-            </Grid>
         </Grid>
     </DataTemplate>
 

@@ -36,16 +36,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             this.telescopeMediator = telescopeMediator;
             telescopeMediator.RegisterConsumer(this);
             Title = "Altitude Chart";
-            Target = null;
-
-            // Registering to profile service events to react on
-            profileService.LocationChanged += (object sender, EventArgs e) => {
-                Target?.SetDateAndPosition(NighttimeCalculator.GetReferenceDate(DateTime.Now), profileService.ActiveProfile.AstrometrySettings.Latitude, profileService.ActiveProfile.AstrometrySettings.Longitude);
-            };
-
-            profileService.HorizonChanged += (object sender, EventArgs e) => {
-                Target?.SetCustomHorizon(profileService.ActiveProfile.AstrometrySettings.Horizon);
-            };
         }
 
         public void Dispose() {
@@ -53,26 +43,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             telescopeMediator.RemoveConsumer(this);
         }
         public TelescopeInfo TelescopeInfo { get; private set; }
-        public DeepSkyObject Target { get; private set; }
 
         public void UpdateDeviceInfo(TelescopeInfo deviceInfo) {
             // The IsVisible flag indicates if the dock window is active or hidden
             if (IsVisible) {
                 TelescopeInfo = deviceInfo;
-                if (TelescopeInfo.Connected && TelescopeInfo.TrackingEnabled) {
-                    var showMoon = Target != null ? Target.Moon.DisplayMoon : false;
-                    if (Target == null || (Target?.Coordinates - deviceInfo.Coordinates)?.Distance.Degree > 1) {
-                        Target = new DeepSkyObject("", deviceInfo.Coordinates, "", profileService.ActiveProfile.AstrometrySettings.Horizon);
-                        Target.SetDateAndPosition(NighttimeCalculator.GetReferenceDate(DateTime.Now), profileService.ActiveProfile.AstrometrySettings.Latitude, profileService.ActiveProfile.AstrometrySettings.Longitude);
-                        if (showMoon) {
-                            Target.Refresh();
-                            Target.Moon.DisplayMoon = true;
-                        }
-                        RaisePropertyChanged(nameof(Target));
-                    }
+                if (TelescopeInfo.Connected) {
                 } else {
-                    Target = null;
-                    RaisePropertyChanged(nameof(Target));
                 }
                 RaisePropertyChanged(nameof(TelescopeInfo));
             }
