@@ -11,11 +11,17 @@
     <!--  The datatemplae for the dockable is indicated by the fully qualified class name and the postfix _Dockable  -->
     <DataTemplate x:Key="Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable_Dockable">
         <Grid Margin="5">
-            <Grid Visibility="{Binding TelescopeInfo.Connected, Converter={StaticResource InverseBooleanToVisibilityCollapsedConverter}}">
+            <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource InverseBooleanToVisibilityCollapsedConverter}}">
                 <TextBlock
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Text="Telescope not connected" />
+                    Text="Camera not connected" />
+            </Grid>
+            <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Text="Camera connected" />
             </Grid>
         </Grid>
     </DataTemplate>

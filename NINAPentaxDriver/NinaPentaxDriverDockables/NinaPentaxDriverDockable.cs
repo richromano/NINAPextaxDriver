@@ -1,6 +1,6 @@
 ﻿using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
-using NINA.Equipment.Equipment.MyTelescope;
+using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Interfaces.ViewModel;
 using NINA.Profile.Interfaces;
@@ -16,16 +16,15 @@ using System.Windows;
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     /// <summary>
     /// This Class shows the basic principle on how to add a new panel to N.I.N.A. Imaging tab via the plugin interface
-    /// In this example an altitude chart is added to the imaging tab that shows the altitude chart based on the position of the telescope    
     /// </summary>
     [Export(typeof(IDockableVM))]
-    public class NinaPentaxDriverDockable : DockableVM, ITelescopeConsumer {
-        private ITelescopeMediator telescopeMediator;
+    public class NinaPentaxDriverDockable : DockableVM, ICameraConsumer {
+        private ICameraMediator cameraMediator;
 
         [ImportingConstructor]
         public NinaPentaxDriverDockable(
             IProfileService profileService,
-            ITelescopeMediator telescopeMediator) : base(profileService) {
+            ICameraMediator cameraMediator) : base(profileService) {
 
             // This will reference the resource dictionary to import the SVG graphic and assign it as the icon for the header bar
             var dict = new ResourceDictionary();
@@ -33,25 +32,25 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             ImageGeometry = (System.Windows.Media.GeometryGroup)dict["Rtg.NINA.NinaPentaxDriver_AltitudeSVG"];
             ImageGeometry.Freeze();
 
-            this.telescopeMediator = telescopeMediator;
-            telescopeMediator.RegisterConsumer(this);
-            Title = "Altitude Chart";
+            this.cameraMediator = cameraMediator;
+            cameraMediator.RegisterConsumer(this);
+            Title = "Camera ISO";
         }
 
         public void Dispose() {
             // On shutdown cleanup
-            telescopeMediator.RemoveConsumer(this);
+            cameraMediator.RemoveConsumer(this);
         }
-        public TelescopeInfo TelescopeInfo { get; private set; }
+        public CameraInfo CameraInfo { get; private set; }
 
-        public void UpdateDeviceInfo(TelescopeInfo deviceInfo) {
+        public void UpdateDeviceInfo(CameraInfo deviceInfo) {
             // The IsVisible flag indicates if the dock window is active or hidden
             if (IsVisible) {
-                TelescopeInfo = deviceInfo;
-                if (TelescopeInfo.Connected) {
+                CameraInfo = deviceInfo;
+                if (CameraInfo.Connected) {
                 } else {
                 }
-                RaisePropertyChanged(nameof(TelescopeInfo));
+                RaisePropertyChanged(nameof(CameraInfo));
             }
         }
     }
