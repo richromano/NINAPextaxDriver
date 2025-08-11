@@ -20,14 +20,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     /// </summary>
     [Export(typeof(IDockableVM))]
     public class NinaPentaxDriverDockable : DockableVM, ITelescopeConsumer {
-        private INighttimeCalculator nighttimeCalculator;
         private ITelescopeMediator telescopeMediator;
 
         [ImportingConstructor]
         public NinaPentaxDriverDockable(
             IProfileService profileService,
-            ITelescopeMediator telescopeMediator,
-            INighttimeCalculator nighttimeCalculator) : base(profileService) {
+            ITelescopeMediator telescopeMediator) : base(profileService) {
 
             // This will reference the resource dictionary to import the SVG graphic and assign it as the icon for the header bar
             var dict = new ResourceDictionary();
@@ -35,17 +33,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             ImageGeometry = (System.Windows.Media.GeometryGroup)dict["Rtg.NINA.NinaPentaxDriver_AltitudeSVG"];
             ImageGeometry.Freeze();
 
-            this.nighttimeCalculator = nighttimeCalculator;
             this.telescopeMediator = telescopeMediator;
             telescopeMediator.RegisterConsumer(this);
             Title = "Altitude Chart";
             Target = null;
-
-            // Some asynchronous initialization
-            Task.Run(() => {
-                NighttimeData = nighttimeCalculator.Calculate();
-                nighttimeCalculator.OnReferenceDayChanged += NighttimeCalculator_OnReferenceDayChanged;
-            });
 
             // Registering to profile service events to react on
             profileService.LocationChanged += (object sender, EventArgs e) => {
@@ -57,16 +48,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             };
         }
 
-        private void NighttimeCalculator_OnReferenceDayChanged(object sender, EventArgs e) {
-            NighttimeData = nighttimeCalculator.Calculate();
-            RaisePropertyChanged(nameof(NighttimeData));
-        }
-
         public void Dispose() {
             // On shutdown cleanup
             telescopeMediator.RemoveConsumer(this);
         }
-        public NighttimeData NighttimeData { get; private set; }
         public TelescopeInfo TelescopeInfo { get; private set; }
         public DeepSkyObject Target { get; private set; }
 
@@ -74,7 +59,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             // The IsVisible flag indicates if the dock window is active or hidden
             if (IsVisible) {
                 TelescopeInfo = deviceInfo;
-                if (TelescopeInfo.Connected && TelescopeInfo.TrackingEnabled && NighttimeData != null) {
+                if (TelescopeInfo.Connected && TelescopeInfo.TrackingEnabled) {
                     var showMoon = Target != null ? Target.Moon.DisplayMoon : false;
                     if (Target == null || (Target?.Coordinates - deviceInfo.Coordinates)?.Distance.Degree > 1) {
                         Target = new DeepSkyObject("", deviceInfo.Coordinates, "", profileService.ActiveProfile.AstrometrySettings.Horizon);

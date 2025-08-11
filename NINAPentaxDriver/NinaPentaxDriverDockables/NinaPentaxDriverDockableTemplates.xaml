@@ -11,20 +11,6 @@
     <!--  The datatemplae for the dockable is indicated by the fully qualified class name and the postfix _Dockable  -->
     <DataTemplate x:Key="Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable_Dockable">
         <Grid Margin="5">
-            <Grid Visibility="{Binding Target, Converter={StaticResource NullToVisibilityCollapsedConverter}}">
-                <Grid.Resources>
-                    <util:BindingProxy x:Key="nighttimeProxy" Data="{Binding NighttimeData}" />
-                </Grid.Resources>
-                <alt:AltitudeChart
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    AnnotateAltitudeAxis="False"
-                    AnnotateTimeAxis="False"
-                    DataContext="{Binding Target}"
-                    NighttimeData="{Binding Source={StaticResource nighttimeProxy}, Path=Data}" />
-            </Grid>
             <Grid Visibility="{Binding TelescopeInfo.Connected, Converter={StaticResource InverseBooleanToVisibilityCollapsedConverter}}">
                 <TextBlock
                     HorizontalAlignment="Center"
