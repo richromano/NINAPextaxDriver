@@ -17,10 +17,7 @@
                 </ToolTip>
             </Button.ToolTip>
             <Grid>
-                <ComboBox x:Name="MyComboBox" Width="200" Height="30" VerticalAlignment="Top" Margin="10">
-                    <ComboBoxItem Content="Option 1" />
-                    <ComboBoxItem Content="Option 2" />
-                    <ComboBoxItem Content="Option 3" />
+                <ComboBox x:Name="MyComboBox" Width="200" Height="30" VerticalAlignment="Top" Margin="10" ItemsSource="{Binding Fstops}" DisplayMemberPath="FSName" SelectedValuePath="FSCode">
                 </ComboBox>
             </Grid>
         </Button>
