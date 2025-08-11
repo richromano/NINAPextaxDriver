@@ -18,10 +18,11 @@
                     Text="Camera not connected" />
             </Grid>
             <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                <TextBlock
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Text="Camera connected" />
+                <ListBox Width="200" Height="100" Background="White" Foreground="Black">
+                    <ListBoxItem>F 1.4</ListBoxItem>
+                    <ListBoxItem>F 2.8</ListBoxItem>
+                    <ListBoxItem>F 4</ListBoxItem>
+                </ListBox>
             </Grid>
         </Grid>
     </DataTemplate>

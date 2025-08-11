@@ -34,7 +34,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
 
             this.cameraMediator = cameraMediator;
             cameraMediator.RegisterConsumer(this);
-            Title = "Camera ISO";
+            Title = "Camera Lens Aperture";
         }
 
         public void Dispose() {
