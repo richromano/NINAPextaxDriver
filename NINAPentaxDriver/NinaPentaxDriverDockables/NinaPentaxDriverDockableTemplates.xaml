@@ -10,36 +10,20 @@
 
     <!--  The datatemplae for the dockable is indicated by the fully qualified class name and the postfix _Dockable  -->
     <DataTemplate x:Key="Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable_Dockable">
-        <Grid Margin="5">
-            <Grid Visibility="{Binding Target, Converter={StaticResource NullToVisibilityCollapsedConverter}}">
-                <Grid.Resources>
-                    <util:BindingProxy x:Key="nighttimeProxy" Data="{Binding NighttimeData}" />
-                </Grid.Resources>
-                <alt:AltitudeChart
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    AnnotateAltitudeAxis="False"
-                    AnnotateTimeAxis="False"
-                    DataContext="{Binding Target}"
-                    NighttimeData="{Binding Source={StaticResource nighttimeProxy}, Path=Data}" />
+        <Button Margin="8" Command="{Binding InjectAutofocusCommand}">
+            <Button.ToolTip>
+                <ToolTip ToolTipService.ShowOnDisabled="True">
+                    <TextBlock Text="Inject Autofocus" />
+                </ToolTip>
+            </Button.ToolTip>
+            <Grid>
+                <ComboBox x:Name="MyComboBox" Width="200" Height="30" VerticalAlignment="Top" Margin="10">
+                    <ComboBoxItem Content="Option 1" />
+                    <ComboBoxItem Content="Option 2" />
+                    <ComboBoxItem Content="Option 3" />
+                </ComboBox>
             </Grid>
-            <Grid Visibility="{Binding TelescopeInfo.Connected, Converter={StaticResource InverseBooleanToVisibilityCollapsedConverter}}">
-                <TextBlock
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Text="Telescope not connected" />
-            </Grid>
-            <Grid Visibility="{Binding TelescopeInfo.Connected, Converter={StaticResource VisibilityConverter}}">
-                <Grid Visibility="{Binding TelescopeInfo.TrackingEnabled, Converter={StaticResource InverseBooleanToVisibilityCollapsedConverter}}">
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Text="Telescope not tracking" />
-                </Grid>
-            </Grid>
-        </Grid>
+        </Button>
     </DataTemplate>
 
     <!--  This geometrygroup defines a custom SVG to be used with the plugin dockable  -->
