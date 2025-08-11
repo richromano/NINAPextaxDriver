@@ -6,7 +6,7 @@
     xmlns:local="clr-namespace:Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables"
     xmlns:mini="clr-namespace:NINA.View.Sequencer.MiniSequencer;assembly=NINA.Sequencer"
     xmlns:nina="clr-namespace:NINA.View.Sequencer;assembly=NINA.Sequencer"
-    xmlns:util="clr-namespace:NINA.Core.Utility;assembly=NINA.Core">
+    xmlns:util="clr-namespace:NINA.Core.Utility;assembly=NINA.Core" xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <!--  The datatemplae for the dockable is indicated by the fully qualified class name and the postfix _Dockable  -->
     <DataTemplate x:Key="Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable_Dockable">
@@ -18,12 +18,20 @@
                     Text="Camera not connected" />
             </Grid>
             <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                <ListBox Width="200" Height="100" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
-                    <ListBoxItem>F 1.4</ListBoxItem>
-                    <ListBoxItem>F 2.8</ListBoxItem>
-                    <ListBoxItem>F 4</ListBoxItem>
-                    <ListBoxItem>F 8</ListBoxItem>
-                </ListBox>
+                <ListBox x:Name="FBox" Width="200" Height="100" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="IsEnabled" Value="{Binding IsItemEnabled}" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemsSource>
+                            <x:Array Type="{x:Type sys:String}">
+                                <sys:String>F 1.4</sys:String>
+                                <sys:String>F 2.8</sys:String>
+                                <sys:String>F 4</sys:String>
+                            </x:Array>
+                        </ListBox.ItemsSource>
+                    </ListBox>
             </Grid>
         </Grid>
     </DataTemplate>

@@ -1,4 +1,5 @@
-﻿using NINA.Astrometry;
+﻿using Accord.Imaging.Filters;
+using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
 using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Interfaces.Mediator;
