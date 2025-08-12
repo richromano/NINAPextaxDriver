@@ -18,20 +18,14 @@
                     Text="Camera not connected" />
             </Grid>
             <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                <ListBox x:Name="FBox" Width="200" Height="100" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
-                                <Setter Property="IsEnabled" Value="{Binding IsItemEnabled}" />
-                            </Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ItemsSource>
-                            <x:Array Type="{x:Type sys:String}">
-                                <sys:String>F 1.4</sys:String>
-                                <sys:String>F 2.8</sys:String>
-                                <sys:String>F 4</sys:String>
-                            </x:Array>
-                        </ListBox.ItemsSource>
-                    </ListBox>
+                <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="200" Height="100" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
+                    <ListBoxItem Content="F 1.4" IsEnabled="{Binding Status1_4, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
+                    <ListBoxItem Content="F 2.0" IsEnabled="{Binding Status2_0, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
+                    <ListBoxItem Content="F 2.8" IsEnabled="{Binding Status2_8, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
+                    <ListBoxItem Content="F 4" IsEnabled="{Binding Status4_0, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
+                    <ListBoxItem Content="F 5.6" IsEnabled="{Binding Status5_6, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
+                    <ListBoxItem Content="F 8" IsEnabled="{Binding Status8_0, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
+                </ListBox>
             </Grid>
         </Grid>
     </DataTemplate>

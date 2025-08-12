@@ -1245,6 +1245,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 //Number fNumber = FNumber.F5_6;
                 //cameraDevice.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                //FNumber.F8_0
 
                 // The list above might contain the following values.
                 // F4.0 (F4_0), F4.5 (F4_5), F5.0 (F5_0)
