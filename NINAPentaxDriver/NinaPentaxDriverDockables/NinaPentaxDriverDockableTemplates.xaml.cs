@@ -21,8 +21,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             var listBox = sender as ListBox;
             var selectedItem = listBox?.SelectedItem;
             MessageBox.Show($"Selected Item: {selectedItem}");
-            NinaPentaxDriverDockable parent= (NinaPentaxDriverDockable)e.Source;
-            parent.cameraMediator.SendCommandBool("SetAperture 28");
         }
     }
 }

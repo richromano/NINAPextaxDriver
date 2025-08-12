@@ -5,11 +5,13 @@ using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Interfaces.ViewModel;
 using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Mediator;
 using NINA.WPF.Base.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -22,6 +24,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     [Export(typeof(IDockableVM))]
     public class NinaPentaxDriverDockable : DockableVM, ICameraConsumer {
         public ICameraMediator cameraMediator;
+        private ListBox lbItem;
 
         [ImportingConstructor]
         public NinaPentaxDriverDockable(
@@ -31,6 +34,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             // This will reference the resource dictionary to import the SVG graphic and assign it as the icon for the header bar
             var dict = new ResourceDictionary();
             dict.Source = new Uri("Rtg.NINA.NinaPentaxDriver;component/NinaPentaxDriverDockables/NinaPentaxDriverDockableTemplates.xaml", UriKind.RelativeOrAbsolute);
+            lbItem = (ListBox)dict["FBox"];
             ImageGeometry = (System.Windows.Media.GeometryGroup)dict["Rtg.NINA.NinaPentaxDriver_AltitudeSVG"];
             ImageGeometry.Freeze();
 
@@ -100,6 +104,27 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
         public bool Status5_6 { get; set; }
         public bool Status8_0 { get; set; }
 
+        private bool SendToCamera(string message) {
+            bool success = false;
+
+/*            var type = cameraMediator.GetType();
+            var GetInfo = type.GetMethod("GetInfo");
+            CameraInfo info = (CameraInfo)GetInfo.Invoke(cameraMediator, null);
+
+            if (info.Connected) {
+                var SendCommand = type.GetMethod("SendCommandBool");
+                object[] parameters = { message };
+//                Logger.Info("Request send to snap port");
+                success = (bool)SendCommand.Invoke(cameraMediator, parameters);
+            } else {
+                success = false;
+//                Logger.Info($"{info.Name} is already connected");
+            }*/
+
+            return success;
+        }
+
+
         public void UpdateDeviceInfo(CameraInfo deviceInfo) {
             // The IsVisible flag indicates if the dock window is active or hidden
             if (IsVisible) {
@@ -111,15 +136,18 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
                     Status4_0 = true;
                     Status5_6 = true;
                     Status8_0 = true;
+                    /*if (lbItem.SelectedItem != null) {
+                        SendToCamera("SetAperture 28");
+                    }*/
+                    RaisePropertyChanged(nameof(Status1_4));
+                    RaisePropertyChanged(nameof(Status2_0));
+                    RaisePropertyChanged(nameof(Status2_8));
+                    RaisePropertyChanged(nameof(Status4_0));
+                    RaisePropertyChanged(nameof(Status5_6));
+                    RaisePropertyChanged(nameof(Status8_0));
                 } else {
                 }
                 RaisePropertyChanged(nameof(CameraInfo));
-                RaisePropertyChanged(nameof(Status1_4));
-                RaisePropertyChanged(nameof(Status2_0));
-                RaisePropertyChanged(nameof(Status2_8));
-                RaisePropertyChanged(nameof(Status4_0));
-                RaisePropertyChanged(nameof(Status5_6));
-                RaisePropertyChanged(nameof(Status8_0));
             }
         }
     }
