@@ -18,7 +18,7 @@
                     Text="Camera not connected" />
             </Grid>
             <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="200" Height="100" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
+                <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="150" Height="200" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
                     <ListBoxItem Content="F 1.4" IsEnabled="{Binding Status1_4, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
                     <ListBoxItem Content="F 2.0" IsEnabled="{Binding Status2_0, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
                     <ListBoxItem Content="F 2.8" IsEnabled="{Binding Status2_8, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>

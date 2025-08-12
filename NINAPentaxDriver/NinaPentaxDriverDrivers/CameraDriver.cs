@@ -57,6 +57,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private int gainValue;
         public static CameraStates m_captureState = CameraStates.Error;
         public static bool LastSetFastReadout;
+        public static int FNumbers;
+
 
         internal static Queue<String> imagesToProcess = new Queue<string>();
         internal static Queue<BitmapImage> bitmapsToProcess = new Queue<BitmapImage>();
@@ -653,6 +655,28 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             LogCameraMessage(0, "Connected", "IsConnected true");
 
+                            short FNumbers=0;
+
+                            FNumber fNumber = new FNumber();
+                            _camera.GetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                            List<CaptureSetting> availableFNumberSettings = fNumber.AvailableSettings;
+                            foreach (CaptureSetting setting in availableFNumberSettings) {
+                                if (setting.Equals(Ricoh.CameraController.FNumber.F1_4))
+                                    FNumbers |= 0x1;
+                                if (setting.Equals(Ricoh.CameraController.FNumber.F2_0))
+                                    FNumbers |= 0x2;
+                                if (setting.Equals(Ricoh.CameraController.FNumber.F2_8))
+                                    FNumbers |= 0x4;
+                                if (setting.Equals(Ricoh.CameraController.FNumber.F4_0))
+                                    FNumbers |= 0x8;
+                                if (setting.Equals(Ricoh.CameraController.FNumber.F5_6))
+                                    FNumbers |= 0x10;
+                                if (setting.Equals(Ricoh.CameraController.FNumber.F8_0))
+                                    FNumbers |= 0x20;
+                            }
+
+
+
                             StorageWriting sw = new StorageWriting();
                             sw = Ricoh.CameraController.StorageWriting.False;
                             StillImageCaptureFormat sicf = new StillImageCaptureFormat();
@@ -1236,20 +1260,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 if (Duration > 1199.99)
                     shutterSpeed = ShutterSpeed.SS1200;
 
-
                 _camera.SetCaptureSettings(new List<CaptureSetting>() { shutterSpeed });
-
-                FNumber fNumber = new FNumber();
-                _camera.GetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                List<CaptureSetting> availableFNumberSettings = fNumber.AvailableSettings;
-
-                //Number fNumber = FNumber.F5_6;
-                //cameraDevice.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                //FNumber.F8_0
-
-                // The list above might contain the following values.
-                // F4.0 (F4_0), F4.5 (F4_5), F5.0 (F5_0)
-
 
                 StartCaptureResponse response = _camera.StartCapture(false);
                 if (response.Result == Result.OK) {
@@ -1372,7 +1383,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             if (command.StartsWith("SetPosition")) 
             {
                 if (_camera == null) {
-                    LogCameraMessage(0, "SendCommandBool", "Camera null");
+                    LogCameraMessage(0, "SendCommandBool Position", "Camera null");
                     return false;
                 }
 
@@ -1380,15 +1391,60 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 if (match.Success) {
                     int number = int.Parse(match.Value);
-                    LogCameraMessage(0, "SendCommandBool", $"Number is {number}");
+                    LogCameraMessage(0, "SendCommandBool Position", $"Number is {number}");
                     _camera.Focus(number);
                     return true;
                 }
 
                 return false; 
             }
-            else
-            {
+            else if (command.StartsWith("SetAperture")) {
+                if (_camera == null) {
+                    LogCameraMessage(0, "SendCommandBool Aperture", "Camera null");
+                    return false;
+                }
+
+                Match match = Regex.Match(command, @"-?\d+");
+
+                if (match.Success) {
+                    int number = int.Parse(match.Value);
+                    LogCameraMessage(0, "SendCommandBool Aperture", $"Number is {number}");
+                    FNumber fNumber;
+                    if (number == 14) {
+                        fNumber = FNumber.F1_4;
+                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                        return true;
+                    }
+                    if (number == 20) {
+                        fNumber = FNumber.F2_0;
+                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                        return true;
+                    }
+                    if (number == 28) {
+                        fNumber = FNumber.F2_8;
+                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                        return true;
+                    }
+                    if (number == 40) {
+                        fNumber = FNumber.F4_0;
+                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                        return true;
+                    }
+                    if (number == 56) {
+                        fNumber = FNumber.F5_6;
+                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                        return true;
+                    }
+                    if (number == 80) {
+                        fNumber = FNumber.F8_0;
+                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                        return true;
+                    }
+                    return false;
+                }
+
+                return false;
+            } else {
                 throw new ASCOM.NotImplementedException(); 
             }
         }

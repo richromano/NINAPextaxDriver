@@ -21,7 +21,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     /// </summary>
     [Export(typeof(IDockableVM))]
     public class NinaPentaxDriverDockable : DockableVM, ICameraConsumer {
-        private ICameraMediator cameraMediator;
+        public ICameraMediator cameraMediator;
 
         [ImportingConstructor]
         public NinaPentaxDriverDockable(
