@@ -18,13 +18,18 @@
                     Text="Camera not connected" />
             </Grid>
             <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="150" Height="200" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
-                    <ListBoxItem Content="F 1.4" IsEnabled="{Binding Status1_4, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
-                    <ListBoxItem Content="F 2.0" IsEnabled="{Binding Status2_0, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
-                    <ListBoxItem Content="F 2.8" IsEnabled="{Binding Status2_8, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
-                    <ListBoxItem Content="F 4" IsEnabled="{Binding Status4_0, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
-                    <ListBoxItem Content="F 5.6" IsEnabled="{Binding Status5_6, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
-                    <ListBoxItem Content="F 8" IsEnabled="{Binding Status8_0, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"/>
+                <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="150" Height="300" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
+                    <ListBoxItem Content="F 1.4" IsEnabled="{Binding Status1_4}"/>
+                    <ListBoxItem Content="F 1.8" IsEnabled="{Binding Status1_8}"/>
+                    <ListBoxItem Content="F 2.0" IsEnabled="{Binding Status2_0}"/>
+                    <ListBoxItem Content="F 2.2" IsEnabled="{Binding Status2_2}"/>
+                    <ListBoxItem Content="F 2.8" IsEnabled="{Binding Status2_8}"/>
+                    <ListBoxItem Content="F 3.5" IsEnabled="{Binding Status3_5}"/>
+                    <ListBoxItem Content="F 4.0" IsEnabled="{Binding Status4_0}"/>
+                    <ListBoxItem Content="F 4.5" IsEnabled="{Binding Status4_5}"/>
+                    <ListBoxItem Content="F 5.6" IsEnabled="{Binding Status5_6}"/>
+                    <ListBoxItem Content="F 6.3" IsEnabled="{Binding Status6_3}"/>
+                    <ListBoxItem Content="F 8.0" IsEnabled="{Binding Status8_0}"/>
                 </ListBox>
             </Grid>
         </Grid>

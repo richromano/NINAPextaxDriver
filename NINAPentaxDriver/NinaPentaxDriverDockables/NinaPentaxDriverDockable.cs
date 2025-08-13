@@ -4,6 +4,7 @@ using NINA.Astrometry.Interfaces;
 using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Interfaces.ViewModel;
+using NINA.Plugin.Interfaces;
 using NINA.Profile.Interfaces;
 using NINA.WPF.Base.Mediator;
 using NINA.WPF.Base.ViewModel;
@@ -13,9 +14,11 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using Xceed.Wpf.Toolkit.Primitives;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     /// <summary>
@@ -23,8 +26,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     /// </summary>
     [Export(typeof(IDockableVM))]
     public class NinaPentaxDriverDockable : DockableVM, ICameraConsumer {
-        public ICameraMediator cameraMediator;
-        private ListBox lbItem;
+        private readonly ICameraMediator cameraMediator;
+        public static string SelectedItem="null";
 
         [ImportingConstructor]
         public NinaPentaxDriverDockable(
@@ -34,7 +37,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             // This will reference the resource dictionary to import the SVG graphic and assign it as the icon for the header bar
             var dict = new ResourceDictionary();
             dict.Source = new Uri("Rtg.NINA.NinaPentaxDriver;component/NinaPentaxDriverDockables/NinaPentaxDriverDockableTemplates.xaml", UriKind.RelativeOrAbsolute);
-            lbItem = (ListBox)dict["FBox"];
             ImageGeometry = (System.Windows.Media.GeometryGroup)dict["Rtg.NINA.NinaPentaxDriver_AltitudeSVG"];
             ImageGeometry.Freeze();
 
@@ -49,59 +51,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
         }
         public CameraInfo CameraInfo { get; private set; }
 
-        /*
-         *     public static readonly FNumber F1_4 = new FNumber("1.4");
-
-    public static readonly FNumber F1_6 = new FNumber("1.6");
-
-    public static readonly FNumber F1_7 = new FNumber("1.7");
-
-    public static readonly FNumber F1_8 = new FNumber("1.8");
-
-    public static readonly FNumber F1_9 = new FNumber("1.9");
-
-    public static readonly FNumber F2_0 = new FNumber("2.0");
-
-    public static readonly FNumber F2_2 = new FNumber("2.2");
-
-    public static readonly FNumber F2_4 = new FNumber("2.4");
-
-    public static readonly FNumber F2_5 = new FNumber("2.5");
-
-    public static readonly FNumber F2_8 = new FNumber("2.8");
-
-    public static readonly FNumber F3_2 = new FNumber("3.2");
-
-    public static readonly FNumber F3_3 = new FNumber("3.3");
-
-    public static readonly FNumber F3_5 = new FNumber("3.5");
-
-    public static readonly FNumber F4_0 = new FNumber("4.0");
-
-    public static readonly FNumber F4_5 = new FNumber("4.5");
-
-    public static readonly FNumber F4_8 = new FNumber("4.8");
-
-    public static readonly FNumber F5_0 = new FNumber("5.0");
-
-    public static readonly FNumber F5_6 = new FNumber("5.6");
-
-    public static readonly FNumber F5_8 = new FNumber("5.8");
-
-    public static readonly FNumber F6_3 = new FNumber("6.3");
-
-    public static readonly FNumber F6_7 = new FNumber("6.7");
-
-    public static readonly FNumber F7_1 = new FNumber("7.1");
-
-    public static readonly FNumber F8_0 = new FNumber("8.0");
-*/
-
         public bool Status1_4 { get; set; }
+        public bool Status1_8 { get; set; }
         public bool Status2_0 { get; set; }
+        public bool Status2_2 { get; set; }
         public bool Status2_8 { get; set; }
+        public bool Status3_5 { get; set; }
         public bool Status4_0 { get; set; }
+        public bool Status4_5 { get; set; }
         public bool Status5_6 { get; set; }
+        public bool Status6_3 { get; set; }
         public bool Status8_0 { get; set; }
 
         private bool SendToCamera(string message) {
@@ -130,20 +89,89 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             if (IsVisible) {
                 CameraInfo = deviceInfo;
                 if (CameraInfo.Connected) {
-                    Status1_4 = true;
-                    Status2_0 = true;
-                    Status2_8 = true;
-                    Status4_0 = true;
-                    Status5_6 = true;
-                    Status8_0 = true;
+                    string values=cameraMediator.SendCommandString("GetAperture");
+                    //MessageBox.Show($"Values: {values}");
+                    Match match = Regex.Match(values, @"-?\d+");
+                    int intValues = 0;
+
+                    if (match.Success) {
+                        intValues = int.Parse(match.Value);
+                    }
+                    //MessageBox.Show($"IntValues: {intValues.ToString()}");
+
+                    if ((intValues & 0x1) != 0)
+                        Status1_4 = true;
+                    else
+                        Status1_4 = false;
+
+                    if ((intValues & 0x2) != 0)
+                        Status1_8 = true;
+                    else
+                        Status1_8 = false;
+
+                    if ((intValues & 0x4) != 0)
+                        Status2_0 = true;
+                    else
+                        Status2_0 = false;
+
+                    if ((intValues & 0x8) != 0)
+                        Status2_2 = true;
+                    else
+                        Status2_2 = false;
+
+                    if ((intValues & 0x10) != 0)
+                        Status2_8 = true;
+                    else
+                        Status2_8 = false;
+
+                    if ((intValues & 0x20) != 0)
+                        Status3_5 = true;
+                    else
+                        Status3_5 = false;
+
+                    if ((intValues & 0x40) != 0)
+                        Status4_0 = true;
+                    else
+                        Status4_0 = false;
+
+                    if ((intValues & 0x80) != 0)
+                        Status4_5 = true;
+                    else
+                        Status4_5 = false;
+
+                    if ((intValues & 0x100) != 0)
+                        Status5_6 = true;
+                    else
+                        Status5_6 = false;
+
+                    if ((intValues & 0x200) != 0)
+                        Status6_3 = true;
+                    else
+                        Status6_3 = false;
+
+                    if ((intValues & 0x400) != 0)
+                        Status8_0 = true;
+                    else
+                        Status8_0 = false;
+
+                    if (SelectedItem != "null") {
+                        MessageBox.Show($"Selected Item: {SelectedItem}");
+                        SelectedItem = "null";
+                    }
+
                     /*if (lbItem.SelectedItem != null) {
                         SendToCamera("SetAperture 28");
                     }*/
                     RaisePropertyChanged(nameof(Status1_4));
+                    RaisePropertyChanged(nameof(Status1_8));
                     RaisePropertyChanged(nameof(Status2_0));
+                    RaisePropertyChanged(nameof(Status2_2));
                     RaisePropertyChanged(nameof(Status2_8));
+                    RaisePropertyChanged(nameof(Status3_5));
                     RaisePropertyChanged(nameof(Status4_0));
+                    RaisePropertyChanged(nameof(Status4_5));
                     RaisePropertyChanged(nameof(Status5_6));
+                    RaisePropertyChanged(nameof(Status6_3));
                     RaisePropertyChanged(nameof(Status8_0));
                 } else {
                 }
