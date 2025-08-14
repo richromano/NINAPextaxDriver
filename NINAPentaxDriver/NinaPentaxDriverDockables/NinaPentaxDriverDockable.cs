@@ -28,6 +28,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     public class NinaPentaxDriverDockable : DockableVM, ICameraConsumer {
         private readonly ICameraMediator cameraMediator;
         public static string SelectedItem="null";
+        static int oldValues = 0;
 
         [ImportingConstructor]
         public NinaPentaxDriverDockable(
@@ -63,33 +64,19 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
         public bool Status6_3 { get; set; }
         public bool Status8_0 { get; set; }
 
-        private bool SendToCamera(string message) {
-            bool success = false;
-
-/*            var type = cameraMediator.GetType();
-            var GetInfo = type.GetMethod("GetInfo");
-            CameraInfo info = (CameraInfo)GetInfo.Invoke(cameraMediator, null);
-
-            if (info.Connected) {
-                var SendCommand = type.GetMethod("SendCommandBool");
-                object[] parameters = { message };
-//                Logger.Info("Request send to snap port");
-                success = (bool)SendCommand.Invoke(cameraMediator, parameters);
-            } else {
-                success = false;
-//                Logger.Info($"{info.Name} is already connected");
-            }*/
-
-            return success;
-        }
-
-
         public void UpdateDeviceInfo(CameraInfo deviceInfo) {
+
             // The IsVisible flag indicates if the dock window is active or hidden
             if (IsVisible) {
                 CameraInfo = deviceInfo;
                 if (CameraInfo.Connected) {
-                    string values=cameraMediator.SendCommandString("GetAperture");
+                    if (SelectedItem != "null") {
+                        //                        MessageBox.Show($"Selected Item: {SelectedItem}");
+                        bool response = cameraMediator.SendCommandBool(SelectedItem);
+                        SelectedItem = "null";
+                    }
+
+                    string values =cameraMediator.SendCommandString("GetAperture");
                     //MessageBox.Show($"Values: {values}");
                     Match match = Regex.Match(values, @"-?\d+");
                     int intValues = 0;
@@ -97,82 +84,79 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
                     if (match.Success) {
                         intValues = int.Parse(match.Value);
                     }
-                    //MessageBox.Show($"IntValues: {intValues.ToString()}");
 
-                    if ((intValues & 0x1) != 0)
-                        Status1_4 = true;
-                    else
-                        Status1_4 = false;
+                    if (intValues != oldValues) {
+                        //MessageBox.Show($"IntValues: {intValues.ToString()}");
 
-                    if ((intValues & 0x2) != 0)
-                        Status1_8 = true;
-                    else
-                        Status1_8 = false;
+                        if ((intValues & 0x1) != 0)
+                            Status1_4 = true;
+                        else
+                            Status1_4 = false;
 
-                    if ((intValues & 0x4) != 0)
-                        Status2_0 = true;
-                    else
-                        Status2_0 = false;
+                        if ((intValues & 0x2) != 0)
+                            Status1_8 = true;
+                        else
+                            Status1_8 = false;
 
-                    if ((intValues & 0x8) != 0)
-                        Status2_2 = true;
-                    else
-                        Status2_2 = false;
+                        if ((intValues & 0x4) != 0)
+                            Status2_0 = true;
+                        else
+                            Status2_0 = false;
 
-                    if ((intValues & 0x10) != 0)
-                        Status2_8 = true;
-                    else
-                        Status2_8 = false;
+                        if ((intValues & 0x8) != 0)
+                            Status2_2 = true;
+                        else
+                            Status2_2 = false;
 
-                    if ((intValues & 0x20) != 0)
-                        Status3_5 = true;
-                    else
-                        Status3_5 = false;
+                        if ((intValues & 0x10) != 0)
+                            Status2_8 = true;
+                        else
+                            Status2_8 = false;
 
-                    if ((intValues & 0x40) != 0)
-                        Status4_0 = true;
-                    else
-                        Status4_0 = false;
+                        if ((intValues & 0x20) != 0)
+                            Status3_5 = true;
+                        else
+                            Status3_5 = false;
 
-                    if ((intValues & 0x80) != 0)
-                        Status4_5 = true;
-                    else
-                        Status4_5 = false;
+                        if ((intValues & 0x40) != 0)
+                            Status4_0 = true;
+                        else
+                            Status4_0 = false;
 
-                    if ((intValues & 0x100) != 0)
-                        Status5_6 = true;
-                    else
-                        Status5_6 = false;
+                        if ((intValues & 0x80) != 0)
+                            Status4_5 = true;
+                        else
+                            Status4_5 = false;
 
-                    if ((intValues & 0x200) != 0)
-                        Status6_3 = true;
-                    else
-                        Status6_3 = false;
+                        if ((intValues & 0x100) != 0)
+                            Status5_6 = true;
+                        else
+                            Status5_6 = false;
 
-                    if ((intValues & 0x400) != 0)
-                        Status8_0 = true;
-                    else
-                        Status8_0 = false;
+                        if ((intValues & 0x200) != 0)
+                            Status6_3 = true;
+                        else
+                            Status6_3 = false;
 
-                    if (SelectedItem != "null") {
-                        MessageBox.Show($"Selected Item: {SelectedItem}");
-                        SelectedItem = "null";
+                        if ((intValues & 0x400) != 0)
+                            Status8_0 = true;
+                        else
+                            Status8_0 = false;
+
+                        RaisePropertyChanged(nameof(Status1_4));
+                        RaisePropertyChanged(nameof(Status1_8));
+                        RaisePropertyChanged(nameof(Status2_0));
+                        RaisePropertyChanged(nameof(Status2_2));
+                        RaisePropertyChanged(nameof(Status2_8));
+                        RaisePropertyChanged(nameof(Status3_5));
+                        RaisePropertyChanged(nameof(Status4_0));
+                        RaisePropertyChanged(nameof(Status4_5));
+                        RaisePropertyChanged(nameof(Status5_6));
+                        RaisePropertyChanged(nameof(Status6_3));
+                        RaisePropertyChanged(nameof(Status8_0));
+
+                        oldValues = intValues;
                     }
-
-                    /*if (lbItem.SelectedItem != null) {
-                        SendToCamera("SetAperture 28");
-                    }*/
-                    RaisePropertyChanged(nameof(Status1_4));
-                    RaisePropertyChanged(nameof(Status1_8));
-                    RaisePropertyChanged(nameof(Status2_0));
-                    RaisePropertyChanged(nameof(Status2_2));
-                    RaisePropertyChanged(nameof(Status2_8));
-                    RaisePropertyChanged(nameof(Status3_5));
-                    RaisePropertyChanged(nameof(Status4_0));
-                    RaisePropertyChanged(nameof(Status4_5));
-                    RaisePropertyChanged(nameof(Status5_6));
-                    RaisePropertyChanged(nameof(Status6_3));
-                    RaisePropertyChanged(nameof(Status8_0));
                 } else {
                 }
                 RaisePropertyChanged(nameof(CameraInfo));

@@ -684,8 +684,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                     FNumbers |= 0x400;
                             }
 
-
-
                             StorageWriting sw = new StorageWriting();
                             sw = Ricoh.CameraController.StorageWriting.False;
                             StillImageCaptureFormat sicf = new StillImageCaptureFormat();
@@ -1389,8 +1387,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         public bool SendCommandBool(string command, bool raw = true) {
-            if (command.StartsWith("SetPosition")) 
-            {
+            if (command.StartsWith("SetPosition")) {
                 if (_camera == null) {
                     LogCameraMessage(0, "SendCommandBool Position", "Camera null");
                     return false;
@@ -1405,77 +1402,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     return true;
                 }
 
-                return false; 
-            }
-            else if (command.StartsWith("SetAperture")) {
-                if (_camera == null) {
-                    LogCameraMessage(0, "SendCommandBool Aperture", "Camera null");
-                    return false;
-                }
-
-                Match match = Regex.Match(command, @"-?\d+");
-
-                if (match.Success) {
-                    int number = int.Parse(match.Value);
-                    LogCameraMessage(0, "SendCommandBool Aperture", $"Number is {number}");
-                    FNumber fNumber;
-                    if (number == 14) {
-                        fNumber = FNumber.F1_4;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 20) {
-                        fNumber = FNumber.F2_0;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 28) {
-                        fNumber = FNumber.F2_8;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 35) {
-                        fNumber = FNumber.F3_5;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 40) {
-                        fNumber = FNumber.F4_0;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 45) {
-                        fNumber = FNumber.F4_5;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 56) {
-                        fNumber = FNumber.F5_6;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 63) {
-                        fNumber = FNumber.F6_3;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    if (number == 80) {
-                        fNumber = FNumber.F8_0;
-                        _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
-                        return true;
-                    }
-                    return false;
-                }
-
                 return false;
-            } else {
-                throw new ASCOM.NotImplementedException(); 
-            }
-        }
-
-        public string SendCommandString(string command, bool raw = true) {
-            if (command.StartsWith("GetAperture"))
-            {
+            } else if (command.StartsWith("System.Windows.Controls.ListBoxItem: Refresh")) {
                 FNumbers = 0;
 
                 FNumber fNumber = new FNumber();
@@ -1505,6 +1433,110 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     if (setting.Equals(Ricoh.CameraController.FNumber.F8_0))
                         FNumbers |= 0x400;
                 }
+                return true;
+            } else if (command.StartsWith("System.Windows.Controls.ListBoxItem: F")) {
+                command = command.Substring(command.Length - 5, 5);
+                if (_camera == null) {
+                    LogCameraMessage(0, "SendCommandBool Aperture", "Camera null");
+                    return false;
+                }
+
+                LogCameraMessage(0, "SendCommandBool Aperture", $"Command is {command}");
+                FNumber fNumber;
+                if (command.Equals("F 1.4")) {
+                    fNumber = FNumber.F1_4;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 1.8")) {
+                    fNumber = FNumber.F1_8;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 2.0")) {
+                    fNumber = FNumber.F2_0;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 2.2")) {
+                    fNumber = FNumber.F2_2;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 2.8")) {
+                    fNumber = FNumber.F2_8;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 3.5")) {
+                    fNumber = FNumber.F3_5;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 4.0")) {
+                    fNumber = FNumber.F4_0;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 4.5")) {
+                    fNumber = FNumber.F4_5;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 5.6")) {
+                    fNumber = FNumber.F5_6;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 6.3")) {
+                    fNumber = FNumber.F6_3;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+                if (command.Equals("F 8.0")) {
+                    fNumber = FNumber.F8_0;
+                    _camera.SetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                    return true;
+                }
+
+                return false;
+            } else {
+                throw new ASCOM.NotImplementedException(command);
+            }
+        }
+
+        public string SendCommandString(string command, bool raw = true) {
+            if (command.StartsWith("GetAperture"))
+            {
+                /*FNumbers = 0;
+
+                FNumber fNumber = new FNumber();
+                _camera.GetCaptureSettings(new List<CaptureSetting>() { fNumber });
+                List<CaptureSetting> availableFNumberSettings = fNumber.AvailableSettings;
+                foreach (CaptureSetting setting in availableFNumberSettings) {
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F1_4))
+                        FNumbers |= 0x1;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F1_8))
+                        FNumbers |= 0x2;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F2_0))
+                        FNumbers |= 0x4;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F2_2))
+                        FNumbers |= 0x8;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F2_8))
+                        FNumbers |= 0x10;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F3_5))
+                        FNumbers |= 0x20;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F4_0))
+                        FNumbers |= 0x40;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F4_5))
+                        FNumbers |= 0x80;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F5_6))
+                        FNumbers |= 0x100;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F6_3))
+                        FNumbers |= 0x200;
+                    if (setting.Equals(Ricoh.CameraController.FNumber.F8_0))
+                        FNumbers |= 0x400;
+                }*/
                 return FNumbers.ToString();
             }
 

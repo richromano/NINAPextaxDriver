@@ -30,6 +30,7 @@
                     <ListBoxItem Content="F 5.6" IsEnabled="{Binding Status5_6}"/>
                     <ListBoxItem Content="F 6.3" IsEnabled="{Binding Status6_3}"/>
                     <ListBoxItem Content="F 8.0" IsEnabled="{Binding Status8_0}"/>
+                    <ListBoxItem Content="Refresh"/>
                 </ListBox>
             </Grid>
         </Grid>

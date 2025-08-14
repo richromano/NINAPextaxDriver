@@ -19,8 +19,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             // Handle selection change
             var listBox = sender as ListBox;
-            var selectedItem = listBox?.SelectedItem;
-            MessageBox.Show($"Selected Item: {selectedItem}");
+            string selectedItem = listBox?.SelectedItem.ToString();
+            Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable.SelectedItem=selectedItem;
+//            MessageBox.Show($"Selected Item: {selectedItem}");
         }
     }
 }
