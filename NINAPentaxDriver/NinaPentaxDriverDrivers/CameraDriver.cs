@@ -466,7 +466,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 FastReadout = false;
                                 m_readoutmode = 0;
                                 if (Settings.UseLiveview)
-                                    _camera.StartLiveView();
+                                    _camera.StartLiveView(0);
                                 MaxImageWidthPixels = Settings.Info.ImageWidthPixels; // Constants to define the ccd pixel dimenstion
                                 MaxImageHeightPixels = Settings.Info.ImageHeightPixels;
                                 //StartX = 0;
@@ -519,14 +519,14 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             bitmapsToProcess.Clear();
                             //imagesToProcess.Clear();
                             if (Settings.UseLiveview)
-                                _camera.StartLiveView();
+                                _camera.StartLiveView(0);
                         }
                         //else
                         //In FastReadout we don't do any real captures so cancel the current one
                         //StopThreadCapture();
                     } else {
                         if (value) {
-                            _camera.StartLiveView();
+                            _camera.StartLiveView(0);
                             // Need to clear because the expected format has changed
                             //StopThreadCapture();
                             imagesToProcess.Clear();
@@ -709,9 +709,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             Settings.UseLiveview = true;
 
                             if (Settings.UseLiveview) {
-                                _camera.StartLiveView();
+                                _camera.StartLiveView(0);
                                 _camera.StopLiveView();
-                                _camera.StartLiveView();
+                                _camera.StartLiveView(0);
                             }
 
                             string deviceModel = Settings.DeviceId;
@@ -1499,6 +1499,29 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     return true;
                 }
 
+                return false;
+            } else if (command.StartsWith("System.Windows.Controls.ListBoxItem: LV")) {
+                command = command.Substring(command.Length - 3, 3);
+                if (command.Equals("1.0")) {
+                    _camera.StopLiveView();
+                    _camera.StartLiveView(1);
+                    return true;
+                }
+                if (command.Equals("2.0")) {
+                    _camera.StopLiveView();
+                    _camera.StartLiveView(2);
+                    return true;
+                }
+                if (command.Equals("4.0")) {
+                    _camera.StopLiveView();
+                    _camera.StartLiveView(4);
+                    return true;
+                }
+                if (command.Equals("8.0")) {
+                    _camera.StopLiveView();
+                    _camera.StartLiveView(8);
+                    return true;
+                }
                 return false;
             } else {
                 throw new ASCOM.NotImplementedException(command);

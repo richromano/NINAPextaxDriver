@@ -18,7 +18,14 @@
                     Text="Camera not connected" />
             </Grid>
             <Grid Visibility="{Binding CameraInfo.Connected, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="150" Height="300" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <!-- First column -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Second column -->
+                </Grid.ColumnDefinitions>
+
+                <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="150" Height="300" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold" Grid.Column="0">
                     <ListBoxItem Content="F 1.4" IsEnabled="{Binding Status1_4}"/>
                     <ListBoxItem Content="F 1.8" IsEnabled="{Binding Status1_8}"/>
                     <ListBoxItem Content="F 2.0" IsEnabled="{Binding Status2_0}"/>
@@ -31,6 +38,12 @@
                     <ListBoxItem Content="F 6.3" IsEnabled="{Binding Status6_3}"/>
                     <ListBoxItem Content="F 8.0" IsEnabled="{Binding Status8_0}"/>
                     <ListBoxItem Content="Refresh"/>
+                </ListBox>
+                <ListBox x:Name="ZoomBox" SelectionChanged="ZoomBox_SelectionChanged" Width="150" Height="300" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold" Grid.Column="1">
+                    <ListBoxItem Content="LV Zoom 1.0"/>
+                    <ListBoxItem Content="LV Zoom 2.0"/>
+                    <ListBoxItem Content="LV Zoom 4.0"/>
+                    <ListBoxItem Content="LV Zoom 8.0"/>
                 </ListBox>
             </Grid>
         </Grid>

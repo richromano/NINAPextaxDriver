@@ -52,11 +52,15 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public int MaxIncrement {
             get {
-                return 10000;
+                return 200;
             }
         }
 
-        public int MaxStep { get => MaxIncrement; }
+        public int MaxStep {
+            get {
+                return 10000;
+            }
+        }
 
         public int Position {
             get {
@@ -64,7 +68,18 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }
 
             set {
+                // Need to limit because there is a bug in N.I.N.A.
                 _moving = true;
+                while (_currentPosition - value > 200) {
+                    _cameraMediator.SendCommandBool($"SetPosition {200}");
+                    _currentPosition = _currentPosition - 200;
+                }
+
+                while (_currentPosition - value < -200) {
+                    _cameraMediator.SendCommandBool($"SetPosition {-200}");
+                    _currentPosition = _currentPosition + 200;
+                }
+
                 _cameraMediator.SendCommandBool($"SetPosition {_currentPosition-value}");
                 _currentPosition = value;
                 _moving = false;
@@ -85,7 +100,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public string Name { get => "Pentax Lens"; }
 
-        public string DisplayName { get => "Pentax Lens"; }
+        public string DisplayName { get => "Pentax Lens - Set Focus to Infinity Before Connecting"; }
 
         public string Category { get => "Pentax"; }
 
@@ -133,10 +148,15 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                _connected = true;
                _moving = true;
-                _currentPosition = 10000;
-                _connected = _cameraMediator.SendCommandBool($"SetPosition {-_currentPosition}");
-                if (!_connected)
-                    throw new NotConnectedException("Camera not connected.  Connect camera first.");
+                //System.Windows.MessageBox.Show("Move focus to infinity before pressing OK");
+                for (int i = 0; i < 2; i++) {
+
+                    _currentPosition = 10000;
+                    _connected = _cameraMediator.SendCommandBool($"SetPosition {-10000}");
+                    Thread.Sleep(500);
+                    if (!_connected)
+                        throw new NotConnectedException("Camera not connected.  Connect camera first.");
+                }
                 _moving = false;
                 return _connected;
             });

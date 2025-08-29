@@ -28,6 +28,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     public class NinaPentaxDriverDockable : DockableVM, ICameraConsumer {
         private readonly ICameraMediator cameraMediator;
         public static string SelectedItem="null";
+        public static string SelectedZoomItem = "null";
         static int oldValues = 0;
 
         [ImportingConstructor]
@@ -43,7 +44,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
 
             this.cameraMediator = cameraMediator;
             cameraMediator.RegisterConsumer(this);
-            Title = "Camera Lens Aperture";
+            Title = "Camera Lens Aperture & LV Zoom";
         }
 
         public void Dispose() {
@@ -74,6 +75,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
                         //                        MessageBox.Show($"Selected Item: {SelectedItem}");
                         bool response = cameraMediator.SendCommandBool(SelectedItem);
                         SelectedItem = "null";
+                    }
+
+                    if (SelectedZoomItem != "null") {
+                        //                        MessageBox.Show($"Selected Item: {SelectedItem}");
+                        bool response = cameraMediator.SendCommandBool(SelectedZoomItem);
+                        SelectedZoomItem = "null";
                     }
 
                     string values =cameraMediator.SendCommandString("GetAperture");

@@ -23,5 +23,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable.SelectedItem=selectedItem;
 //            MessageBox.Show($"Selected Item: {selectedItem}");
         }
+        private void ZoomBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            // Handle selection change
+            var listBox = sender as ListBox;
+            string selectedItem = listBox?.SelectedItem.ToString();
+            Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable.SelectedZoomItem = selectedItem;
+            //            MessageBox.Show($"Selected Item: {selectedItem}");
+        }
     }
 }
