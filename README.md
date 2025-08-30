@@ -12,8 +12,8 @@ The software supports both Manual and Bulb modes.  No other modes are supported.
 
 The focuser speaks to the autofocus lens to change focus.  If keeps the Camera LiveView active to allow focusing with the Ricoh SDK.  You can use all the focusing tools in NINA.  
 
-The is an Aperture window in the Imaging tab.  This allows changing the Aperture.  You can press Refresh and the driver will rescan the available Apertures in the current lens.
+There is an Aperture window in the Imaging tab.  This allows changing the Aperture.  You can press Refresh and the driver will rescan the available Apertures in the current lens.
 
-The Video button is available in the Imaging tab in addition to the shutter button.  This will display the LiveView image streaming from the camera allow easier framing and supporting initial focusing.
+The Video button is available in the Imaging tab in addition to the shutter button.  This will display the LiveView image streaming from the camera to allow easier framing and supporting initial focusing.
 
 Any issues please reach out on the Discussions board.
