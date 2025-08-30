@@ -387,7 +387,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public string DriverInfo => "https://github.com/richromano/NINAPextaxDriver";
 
-        public string DriverVersion => "8/3/2025";
+        public string DriverVersion => "8/30/2025";
 
         public double TemperatureSetPoint {
             get => double.NaN;
