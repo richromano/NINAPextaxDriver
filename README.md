@@ -2,7 +2,7 @@
 
 You can install the plugin from the NINA PlugIn tab.
 
-Currently tested with KP, K3-III, K1, K1ii, and 645Z.  KF and K70 should work.
+Currently tested with KP, K3-III, K1, K1ii, and 645Z.  KF and K70 will not work with Nina. 
 
 Make sure your camera is in MTP/PTP mode.  Turn on Electronic Shutter if desired.  When connecting always make sure that the camera is connected first and then connect the focuser.
 
