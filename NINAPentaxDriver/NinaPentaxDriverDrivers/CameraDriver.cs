@@ -36,7 +36,9 @@ using System.Windows.Media.Media3D;
 using System.Xml;
 using static Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers.CameraProvider;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+//using CameraStates = NINA.Core.Enum.CameraStates;
 using MyTelescope = NINA.Equipment.Equipment.MyTelescope;
+//using SensorType = NINA.Core.Enum.SensorType;
 using String = System.String;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
@@ -66,7 +68,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         internal static string lastCaptureResponse = "None";
         internal static string canceledCaptureResponse = "None";
         internal static DateTime lastCaptureStartTime = DateTime.MinValue;
-
+        internal static bool useFile = true;
+        
         private SerialRelayInteraction serialRelayInteraction;
 
         public CameraDriver(IProfileService profileService, ITelescopeMediator telescopeMediator, IExposureDataFactory exposureDataFactory, PentaxKPProfile.DeviceInfo device) {
@@ -132,7 +135,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 // Get the image and save it in the current directory
                 if ((!LastSetFastReadout) && (m_captureState == CameraStates.Exposing))
                     using (FileStream fs = new FileStream(
-                        System.IO.Path.GetTempPath() + Path.DirectorySeparatorChar +
+                        System.IO.Path.GetTempPath() + System.IO.Path.DirectorySeparatorChar +
                         image.Name, FileMode.Create, FileAccess.Write)) {
                         m_captureState = CameraStates.Reading;
                         // TODO: Add frame progress
@@ -141,9 +144,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             (imageGetResponse.Result == Result.OK ?
                                 "SUCCEED." : "FAILED."));
                         // TODO: save to memory instead MemoryStream
-                        LogCameraMessage(0,"", System.IO.Path.GetTempPath() + Path.DirectorySeparatorChar +
+                        LogCameraMessage(0,"", System.IO.Path.GetTempPath() + System.IO.Path.DirectorySeparatorChar +
                         image.Name);
-                        imagesToProcess.Enqueue(System.IO.Path.GetTempPath() + Path.DirectorySeparatorChar + image.Name);
+                        imagesToProcess.Enqueue(System.IO.Path.GetTempPath() + System.IO.Path.DirectorySeparatorChar + image.Name);
                         if (Settings.BulbModeEnable)
                             m_captureState = CameraStates.Idle;
                     }
@@ -151,6 +154,22 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
             // Capture Complete
             public override void CaptureComplete(CameraDevice sender, Ricoh.CameraController.Capture capture) {
+                if(useFile)
+                {
+                    CameraImage image = sender.Images[0];
+                    using (FileStream fs = new FileStream(
+                        System.IO.Path.GetTempPath() + System.IO.Path.DirectorySeparatorChar + image.Name,
+                        FileMode.Create, FileAccess.Write)) {
+                        Response imageGetResponse = image.GetData(fs);
+                        LogCameraMessage(0, "", "Get Image has " +
+                            (imageGetResponse.Result == Result.OK ?
+                                "SUCCEED." : "FAILED."));
+                        // TODO: save to memory instead MemoryStream
+                        LogCameraMessage(0, "", System.IO.Path.GetTempPath() + System.IO.Path.DirectorySeparatorChar +
+                        image.Name);
+                        imagesToProcess.Enqueue(System.IO.Path.GetTempPath() + System.IO.Path.DirectorySeparatorChar + image.Name);
+                    }
+                }
                 m_captureState = CameraStates.Idle;
                 LogCameraMessage(0,"","Capture Complete. Capture ID: "+capture.ID.ToString()+" tracking "+lastCaptureResponse.ToString()+" "+canceledCaptureResponse.ToString());
             }
@@ -254,6 +273,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public bool CanShowLiveView {
             get {
+               if(useFile)
+                    return false;
+
                return true;
             }
         }
@@ -578,6 +600,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public Task<bool> Connect(CancellationToken token) {
             return Task.Run<bool>(() => {
+
                 // TODO: disconnect when necessary
                 if (_camera != null) {
                     if (_camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB)) {
@@ -684,8 +707,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                     FNumbers |= 0x400;
                             }
 
+                            Settings.UseLiveview = true;
+                            useFile = false;
                             StorageWriting sw = new StorageWriting();
                             sw = Ricoh.CameraController.StorageWriting.False;
+                            if (_camera.Model.StartsWith("PENTAX K-70") || _camera.Model.StartsWith("PENTAX KF")) {
+                                sw = Ricoh.CameraController.StorageWriting.True;
+                                useFile = true;
+                                Settings.UseLiveview = false;
+                            }
+
                             StillImageCaptureFormat sicf = new StillImageCaptureFormat();
                             sicf = Ricoh.CameraController.StillImageCaptureFormat.DNG;
 
@@ -701,12 +732,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 throw new ASCOM.DriverException("Can't set capture settings.");
                             }
 
-                            LogCameraMessage(0, "Connect", "Driver Version: 7/25/2025");
+                            LogCameraMessage(0, "Connect", "Driver Version: 10/8/2025");
                             LogCameraMessage(0, "Bulb mode", Settings.BulbModeEnable.ToString()+" mode "+exposureProgram.ToString());
                             // Sleep to let the settings take effect
                             Thread.Sleep(1000);
-
-                            Settings.UseLiveview = true;
 
                             if (Settings.UseLiveview) {
                                 _camera.StartLiveView(0);
@@ -772,7 +801,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private ushort[] ReadImageQuick(BitmapImage image, ref int pixelWidth, ref int pixelHeight) {
             Bitmap _bmp = BitmapImage2Bitmap(image);
             // Lock the bitmap's bits.
-            Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
+            System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, _bmp.Width, _bmp.Height);
             BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite, _bmp.PixelFormat);
             int[,,] _cameraImageArray = new int[_bmp.Width , _bmp.Height, 3]; // Assuming this is declared and initialized elsewhere.
 
@@ -1363,7 +1392,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 while (!IsFileClosed(filename)) { }
                 File.Delete(filename);
-
 
                 return _exposureDataFactory.CreateRAWExposureData(
                     converter: _profileService.ActiveProfile.CameraSettings.RawConverter,
