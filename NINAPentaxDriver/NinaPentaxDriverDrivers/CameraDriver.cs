@@ -36,9 +36,7 @@ using System.Windows.Media.Media3D;
 using System.Xml;
 using static Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers.CameraProvider;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-//using CameraStates = NINA.Core.Enum.CameraStates;
 using MyTelescope = NINA.Equipment.Equipment.MyTelescope;
-//using SensorType = NINA.Core.Enum.SensorType;
 using String = System.String;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
@@ -273,9 +271,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public bool CanShowLiveView {
             get {
-               if(useFile)
-                    return false;
-
+//                if(useFile)
+//                    return false;
                return true;
             }
         }
@@ -706,6 +703,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 if (setting.Equals(Ricoh.CameraController.FNumber.F8_0))
                                     FNumbers |= 0x400;
                             }
+
 
                             Settings.UseLiveview = true;
                             useFile = false;
@@ -1528,7 +1526,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 }
 
                 return false;
-            } else if (command.StartsWith("System.Windows.Controls.ListBoxItem: LV")) {
+            } else if (command.StartsWith("System.Windows.Controls.ListBoxItem: LV")&&!useFile) {
                 command = command.Substring(command.Length - 3, 3);
                 if (command.Equals("1.0")) {
                     _camera.StopLiveView();
