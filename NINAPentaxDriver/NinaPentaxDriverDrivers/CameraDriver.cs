@@ -1414,6 +1414,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public bool SendCommandBool(string command, bool raw = true) {
             if (command.StartsWith("SetPosition")) {
+                if (useFile)
+                    return false;
+
                 if (_camera == null) {
                     LogCameraMessage(0, "SendCommandBool Position", "Camera null");
                     return false;
