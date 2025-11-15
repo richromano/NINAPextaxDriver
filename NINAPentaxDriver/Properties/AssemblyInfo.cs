@@ -7,13 +7,13 @@ using System.Runtime.InteropServices;
 
 // [MANDATORY] The assembly versioning
 //Should be incremented for each new release build of a plugin
-[assembly: AssemblyVersion("1.0.0.1")]
-[assembly: AssemblyFileVersion("1.0.0.1")]
+[assembly: AssemblyVersion("11.14.2025.1")]
+[assembly: AssemblyFileVersion("11.14.2025.1")]
 
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("Pentax Camera and Focuser Driver")]
 // [MANDATORY] A short description of your plugin
-[assembly: AssemblyDescription("Focuser and Camera Driver for Pentax SDK: K-1 K-1ii KP 645Z K-3iii")]
+[assembly: AssemblyDescription("Focuser and Camera Driver for Pentax SDK: K-1 K-1ii KP 645Z K-3iii, KF K-70")]
 
 // The following attributes are not required for the plugin per se, but are required by the official manifest meta data
 

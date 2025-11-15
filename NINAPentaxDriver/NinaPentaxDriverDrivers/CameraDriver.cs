@@ -587,6 +587,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         #region Supported Methods
 
+        public void UpdateSubSampleArea() {
+            throw new ASCOM.NotImplementedException();
+        }
+
         public void StartLiveView(CaptureSequence sequence) {
             FastReadout = true;
         }
