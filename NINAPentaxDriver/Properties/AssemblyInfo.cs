@@ -7,8 +7,8 @@ using System.Runtime.InteropServices;
 
 // [MANDATORY] The assembly versioning
 //Should be incremented for each new release build of a plugin
-[assembly: AssemblyVersion("11.14.2025.1")]
-[assembly: AssemblyFileVersion("11.14.2025.1")]
+[assembly: AssemblyVersion("7.10.2026.1")]
+[assembly: AssemblyFileVersion("7.10.2026.1")]
 
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("Pentax Camera and Focuser Driver")]
@@ -21,7 +21,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCompany("RTG")]
 // The product name that this plugin is part of
 [assembly: AssemblyProduct("Pentax Driver")]
-[assembly: AssemblyCopyright("Copyright © 2025 RTG")]
+[assembly: AssemblyCopyright("Copyright © 2026 RTG")]
 
 // The minimum Version of N.I.N.A. that this plugin is compatible with
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.0.0.2017")]

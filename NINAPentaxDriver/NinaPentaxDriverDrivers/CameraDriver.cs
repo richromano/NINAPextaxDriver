@@ -751,7 +751,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 throw new ASCOM.DriverException("Can't set capture settings.");
                             }
 
-                            LogCameraMessage(0, "Connect", "Driver Version: 10/8/2025");
+                            LogCameraMessage(0, "Connect", "Driver Version: 7/10/2026");
                             LogCameraMessage(0, "Bulb mode", Settings.BulbModeEnable.ToString()+" mode "+exposureProgram.ToString());
                             // Sleep to let the settings take effect
                             Thread.Sleep(1000);
