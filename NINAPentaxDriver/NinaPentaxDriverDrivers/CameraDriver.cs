@@ -80,16 +80,33 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         #region Internal Helpers
 
         public static void LogCameraMessage(int level, string identifier, string message, params object[] args) {
-            /*if (level <= Settings.DebugLevel)*/ {
+            if(level==0)
+            {
                 var msg = string.Format(message, args);
                 Logger.Info($"[camera] {identifier}", msg);
+            }
+            else if(level==1)
+            {
+                var msg = string.Format(message, args);
+                Logger.Debug($"[camera] {identifier}", msg);
+            } 
+            else {
+                var msg = string.Format(message, args);
+                Logger.Trace($"[camera] {identifier}", msg);
             }
         }
 
         public static void LogFocuserMessage(int level, string identifier, string message, params object[] args) {
-            /*if (level <= Settings.DebugLevel)*/ {
+            if (level == 0) {
                 var msg = string.Format(message, args);
                 Logger.Info($"[focuser] {identifier}", msg);
+            }
+            else if (level == 1) {
+                var msg = string.Format(message, args);
+                Logger.Debug($"[focuser] {identifier}", msg);
+            } else {
+                var msg = string.Format(message, args);
+                Logger.Trace($"[focuser] {identifier}", msg);
             }
         }
 
@@ -105,12 +122,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 CameraDevice sender,
                 byte[] liveViewFrame) {
                 // Display liveViewFrame in Image control (Name: image) of WPF
-                var memoryStream = new MemoryStream(liveViewFrame);
-                var bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.StreamSource = memoryStream;
-                bitmapImage.EndInit();
                 if (LastSetFastReadout){// && m_captureState == CameraStates.Exposing) {
+                    var memoryStream = new MemoryStream(liveViewFrame);
+                    var bitmapImage = new BitmapImage();
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = memoryStream;
+                    bitmapImage.EndInit();
                     bitmapsToProcess.Enqueue(bitmapImage);
                     m_captureState = CameraStates.Idle;
                     LogCameraMessage(1,"", "Enqueued LiveView Image");
@@ -360,7 +377,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         public IList<int> Gains {
             get {
                 List<int> gains = new List<int>();
-                LogCameraMessage(0,"", "get_Gains");
+                LogCameraMessage(1,"", "get_Gains");
 
                 gains.Add(100);
                 gains.Add(200);
@@ -406,7 +423,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public string DriverInfo => "https://github.com/richromano/NINAPextaxDriver";
 
-        public string DriverVersion => "8/30/2025";
+        public string DriverVersion => "7/10/2026";
 
         public double TemperatureSetPoint {
             get => double.NaN;
@@ -468,7 +485,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             get {
                 //using (new SerializedAccess(this, "get_ReadoutMode"))
                 {
-                    LogCameraMessage(0, "", "get_ReadoutMode");
+                    LogCameraMessage(1, "", "get_ReadoutMode");
                     return (short)m_readoutmode;
                 }
             }
@@ -1362,7 +1379,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             //return;
         }
 
-        private bool IsFileClosed(string filePath) {
+        static bool IsFileClosed(string filePath) {
             try {
                 using (var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)) {
                     return true;
@@ -1383,6 +1400,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         public Task<IExposureData> DownloadExposure(CancellationToken token) {
             return Task.Run<IExposureData>(() => {
                 string filename=imagesToProcess.Dequeue();
+                while (!IsFileClosed(filename)) { }
                 FileStream fs = new FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None);
 
                 byte[] readData = new byte[fs.Length];

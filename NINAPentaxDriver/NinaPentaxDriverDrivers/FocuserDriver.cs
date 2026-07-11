@@ -39,7 +39,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         internal bool _moving = false;
         internal bool _connected = false;
         private ICameraMediator _cameraMediator;
-        private int _currentPosition = 10000;
+        private int _currentPosition = 30000;
 
         public FocuserDriver(IProfileService profileService, ICameraMediator cameraMediator) {
             _profileService = profileService;
@@ -58,7 +58,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public int MaxStep {
             get {
-                return 10000;
+                return 30000;
             }
         }
 
@@ -151,8 +151,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 //System.Windows.MessageBox.Show("Move focus to infinity before pressing OK");
                 for (int i = 0; i < 2; i++) {
 
-                    _currentPosition = 10000;
-                    _connected = _cameraMediator.SendCommandBool($"SetPosition {-10000}");
+                    _currentPosition = 30000;
+                    _connected = _cameraMediator.SendCommandBool($"SetPosition {-30000}");
                     Thread.Sleep(500);
                     if (!_connected)
                         throw new NotConnectedException("Camera not connected.  Connect camera first.");
