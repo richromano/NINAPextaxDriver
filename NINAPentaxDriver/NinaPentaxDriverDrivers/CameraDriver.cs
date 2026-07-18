@@ -1039,7 +1039,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 double Duration = sequence.ExposureTime;
 
-                LogCameraMessage(0, "", "StartExposure()");
+                LogCameraMessage(0, "", "StartExposure() Duration="+Duration.ToString());
                 //Check duration range and save 
                 if (Duration <= 0.0) {
                     throw new InvalidValueException("StartExposure", "Duration", " > 0");

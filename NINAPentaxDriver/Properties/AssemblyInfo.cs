@@ -7,8 +7,8 @@ using System.Runtime.InteropServices;
 
 // [MANDATORY] The assembly versioning
 //Should be incremented for each new release build of a plugin
-[assembly: AssemblyVersion("7.10.2026.1")]
-[assembly: AssemblyFileVersion("7.10.2026.1")]
+[assembly: AssemblyVersion("26.7.10.1")]
+[assembly: AssemblyFileVersion("26.7.10.1")]
 
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("Pentax Camera and Focuser Driver")]
