@@ -7,6 +7,7 @@ using NINA.Profile;
 using NINA.Profile.Interfaces;
 using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.WPF.Base.Interfaces.ViewModel;
+using Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers;
 using Rtg.NINA.NinaPentaxDriver.Properties;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,7 @@ namespace Rtg.NINA.NinaPentaxDriver {
 //        private readonly ImagePattern exampleImagePattern = new ImagePattern("$$EXAMPLEPATTERN$$", "An example of an image pattern implementation", "NINA Pentax Driver");
 
         [ImportingConstructor]
-        public NinaPentaxDriver(IProfileService profileService, IOptionsVM options, IImageSaveMediator imageSaveMediator) {
+        public NinaPentaxDriver(IProfileService profileService, IOptionsVM options, IImageSaveMediator imageSaveMediator, IMessageBroker messageBroker) {
             if (Settings.Default.UpdateSettings) {
                 Settings.Default.Upgrade();
                 Settings.Default.UpdateSettings = false;
@@ -48,6 +49,8 @@ namespace Rtg.NINA.NinaPentaxDriver {
             this.profileService = profileService;
             // React on a changed profile
             profileService.ProfileChanged += ProfileService_ProfileChanged;
+
+            PentaxMediator.InitMediator(this, messageBroker);
 
             // Hook into image saving for adding FITS keywords or image file patterns
             this.imageSaveMediator = imageSaveMediator;

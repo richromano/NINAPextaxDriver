@@ -1,42 +1,29 @@
 ﻿using ASCOM;
-using FTD2XX_NET;
 using NINA.Core.Enum;
 using NINA.Core.Model.Equipment;
 using NINA.Core.Utility;
-using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Model;
-using NINA.Equipment.SDK.CameraSDKs.ASTPANSDK;
-using NINA.Equipment.Utility;
 using NINA.Image.ImageData;
 using NINA.Image.Interfaces;
-using NINA.Profile;
 using NINA.Profile.Interfaces;
-using NINA.WPF.Base.Mediator;
 using Ricoh.CameraController;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Ink;
 using System.Windows.Media.Imaging;
-using System.Windows.Media.Media3D;
-using System.Xml;
 using static Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers.CameraProvider;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using MyTelescope = NINA.Equipment.Equipment.MyTelescope;
+using static System.Net.Mime.MediaTypeNames;
 using String = System.String;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
@@ -75,6 +62,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             _exposureDataFactory = exposureDataFactory;
             _telescopeMediator = telescopeMediator;
             _device = device;
+            _profileService.ActiveProfile.TelescopeSettings.FocalLength = 0.0;
         }
 
         #region Internal Helpers
@@ -238,9 +226,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public SensorType SensorType { get => SensorType.RGGB; set => throw new ASCOM.NotImplementedException(); }
 
-        public short BayerOffsetX { get => 1; set => throw new ASCOM.NotImplementedException(); }
+        public short BayerOffsetX { get => 0; set => throw new ASCOM.NotImplementedException(); }
 
-        public short BayerOffsetY { get => 1; set => throw new ASCOM.NotImplementedException(); }
+        public short BayerOffsetY { get => 0; set => throw new ASCOM.NotImplementedException(); }
 
         public int CameraXSize {
             get {
@@ -281,6 +269,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 return Settings.Info.PixelHeight;
             }
         }
+
+        public string Lens { get => lens; set => lens = value; }
 
         public bool CanSetTemperature => false;
 
@@ -1018,6 +1008,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         private CancellationTokenSource bulbCompletionCTS = null;
+        private string lens;
 
         private void BulbCapture(double exposureTime, Action capture, Action stopCapture) {
             Logger.Debug("Starting bulb capture");
@@ -1396,6 +1387,142 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 }
             }
         }
+        private string GetAppPath() {
+            string AppPath;
+            AppPath = Assembly.GetExecutingAssembly().Location;
+            AppPath = Path.GetDirectoryName(AppPath);
+
+            return AppPath;
+        }
+        
+        void SetFocalLength(string file) {
+            // Example command: list directory contents
+
+            try {
+                // Create process start info
+                string exeDir = Path.Combine(GetAppPath(), "exiftool.exe");
+                ProcessStartInfo procStartInfo = new ProcessStartInfo();
+
+                procStartInfo.FileName = exeDir;
+                procStartInfo.Arguments = "-Focal* " + file;
+                procStartInfo.RedirectStandardOutput = true;
+                procStartInfo.RedirectStandardError = true;
+                procStartInfo.UseShellExecute = false;
+                procStartInfo.CreateNoWindow = true;
+
+                string output;
+
+                using (var process = new Process()) {
+                    process.StartInfo = procStartInfo;
+
+                    // Start process
+                    process.Start();
+
+                    // Read outputs
+                    output = process.StandardOutput.ReadToEnd();
+                    string errors = process.StandardError.ReadToEnd();
+
+                    // Wait for process to exit
+                    process.WaitForExit();
+
+                    // Display results
+                    LogFocuserMessage(0, "EXIF", "=== OUTPUT ===");
+                    LogFocuserMessage(0, "EXIF", output);
+
+                    if (!string.IsNullOrWhiteSpace(errors)) {
+                        LogFocuserMessage(3, "EXIF", "=== ERRORS ===");
+                        LogFocuserMessage(3, "EXIF", errors);
+                    }
+                }
+
+                if (string.IsNullOrEmpty(output))
+                    return;
+
+                int colonIndex = output.IndexOf(':');
+                if (colonIndex == -1 || colonIndex == output.Length - 1)
+                    return;
+
+                // Find mm after colon
+                int newlineIndex = output.IndexOf('m', colonIndex + 1);
+                if (newlineIndex == -1)
+                    newlineIndex = output.Length; // No newline found, take until end
+
+                // Extract substring, trimming spaces
+                string result = output.Substring(colonIndex + 1, newlineIndex - colonIndex - 1).Trim();
+
+                if(result!=null)
+                    _profileService.ActiveProfile.TelescopeSettings.FocalLength = float.Parse(result);
+                return;
+            } catch (Exception ex) {
+                LogFocuserMessage(0, "EXIF", "Error executing command: " + ex.Message);
+                return;
+            }
+        }
+
+        string GetLensName (string file) {
+            // Example command: list directory contents
+
+            try {
+                // Create process start info
+                string exeDir = Path.Combine(GetAppPath(), "exiftool.exe");
+                ProcessStartInfo procStartInfo = new ProcessStartInfo();
+
+                procStartInfo.FileName = exeDir;
+                procStartInfo.Arguments = "-Lens* "+file;
+                procStartInfo.RedirectStandardOutput = true;
+                procStartInfo.RedirectStandardError = true;
+                procStartInfo.UseShellExecute = false;
+                procStartInfo.CreateNoWindow = true;
+
+                string output;
+
+                using (var process = new Process()) {
+                    process.StartInfo = procStartInfo;
+
+                    // Start process
+                    process.Start();
+
+                    // Read outputs
+                    output = process.StandardOutput.ReadToEnd();
+                    string errors = process.StandardError.ReadToEnd();
+
+                    // Wait for process to exit
+                    process.WaitForExit();
+
+                    // Display results
+                    LogFocuserMessage(0,"EXIF","=== OUTPUT ===");
+                    LogFocuserMessage(0, "EXIF", output);
+
+                    if (!string.IsNullOrWhiteSpace(errors)) {
+                        LogFocuserMessage(3, "EXIF", "=== ERRORS ===");
+                        LogFocuserMessage(3, "EXIF", errors);
+                    }
+                }
+
+                if (string.IsNullOrEmpty(output))
+                    return "none";
+
+                int colonIndex = output.IndexOf(':');
+                if (colonIndex == -1 || colonIndex == output.Length - 1)
+                    return null;
+
+                // Find newline after colon
+                int newlineIndex = output.IndexOf('\n', colonIndex + 1);
+                if (newlineIndex == -1)
+                    newlineIndex = output.Length; // No newline found, take until end
+
+                // Extract substring, trimming spaces
+                string result = output.Substring(colonIndex + 1, newlineIndex - colonIndex - 1).Trim();
+
+                if(result!=null)
+                    _profileService.ActiveProfile.TelescopeSettings.Name = result;
+
+                return string.IsNullOrEmpty(result) ? "none" : result;
+            } catch (Exception ex) {
+                LogFocuserMessage(0, "EXIF", "Error executing command: " + ex.Message);
+                return "error";
+            }
+        }
 
         public Task<IExposureData> DownloadExposure(CancellationToken token) {
             return Task.Run<IExposureData>(() => {
@@ -1410,7 +1537,11 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 fs.Close();
 
+                SetFocalLength(filename);
+                Lens = GetLensName(filename);
+
                 while (!IsFileClosed(filename)) { }
+
                 File.Delete(filename);
 
                 return _exposureDataFactory.CreateRAWExposureData(
@@ -1580,6 +1711,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         public string SendCommandString(string command, bool raw = true) {
+            if (command.StartsWith("GetLens")) {
+                return Lens;
+            }
+
             if (command.StartsWith("GetAperture"))
             {
                 /*FNumbers = 0;

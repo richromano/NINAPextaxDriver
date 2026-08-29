@@ -1,5 +1,6 @@
 ﻿using Accord;
 using Castle.Components.DictionaryAdapter.Xml;
+using CommunityToolkit.Mvvm.Input;
 using FTD2XX_NET;
 using Google.Protobuf.WellKnownTypes;
 using Newtonsoft.Json.Linq;
@@ -8,9 +9,9 @@ using NINA.Core.Locale;
 using NINA.Core.Model.Equipment;
 using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
+using NINA.Equipment.Equipment;
 using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Equipment.MyGuider.PHD2;
-using NINA.Equipment.Equipment;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Model;
@@ -30,12 +31,16 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
+using AsyncRelayCommand = CommunityToolkit.Mvvm.Input.AsyncRelayCommand;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class FocuserDriver : IFocuser, IDisposable {
         private bool disposedValue;
         internal IProfileService _profileService;
+        private bool _calibrated;
         internal bool _moving = false;
         internal bool _connected = false;
         private ICameraMediator _cameraMediator;
@@ -44,6 +49,20 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         public FocuserDriver(IProfileService profileService, ICameraMediator cameraMediator) {
             _profileService = profileService;
             _cameraMediator = cameraMediator;
+
+            StartCalibration = new AsyncRelayCommand(async () => {
+                Logger.Info("Calibration requested", "Calibrate");
+                if (!this.Connected) return;
+                this._CalibrationToken = new CancellationTokenSource();
+                await Task.Run(() => this.Calibrate(this._CalibrationToken.Token));
+                if (this._CalibrationToken.IsCancellationRequested) {
+                    Logger.Info("Calibration have been canceled.", "Calibrate");
+                    Notification.ShowWarning("FocuserDriver: Calibration have been canceled.\nThe Focuser will certainly behave wrongly!", TimeSpan.FromSeconds(10));
+                    return;
+                }
+            });
+            CancelCalibration = new RelayCommand(() => this._CalibrationToken?.Cancel());
+
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -98,9 +117,20 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public string Id { get => "Pentax Lens"; }
 
-        public string Name { get => "Pentax Lens"; }
+        //        public string Name { get => "Pentax Lens"; }
+        public string Name {
+            get {
+                return _cameraMediator.SendCommandString("GetLens");
+            }
+        }
 
-        public string DisplayName { get => "Pentax Lens - Set Focus to Infinity Before Connecting"; }
+        public string DisplayName {
+            get {
+                return _cameraMediator.SendCommandString("GetLens");
+            }
+        }
+
+        //public string DisplayName { get => "Pentax Lens - Set Focus to Infinity Before Connecting"; }
 
         public string Category { get => "Pentax"; }
 
@@ -146,20 +176,42 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     //return false;
                 }
 
-               _connected = true;
-               _moving = true;
-                //System.Windows.MessageBox.Show("Move focus to infinity before pressing OK");
-                for (int i = 0; i < 2; i++) {
-
-                    _currentPosition = 30000;
-                    _connected = _cameraMediator.SendCommandBool($"SetPosition {-30000}");
-                    Thread.Sleep(500);
-                    if (!_connected)
-                        throw new NotConnectedException("Camera not connected.  Connect camera first.");
+                Logger.Info("Lens DisplayName [" + this.DisplayName + "]");
+                if (string.IsNullOrEmpty(this.DisplayName)) {
+//                    _cameraMediator.Capture();
+                    throw new NotConnectedException("Talk a picture before connecting lens.");
+                    //return false;
                 }
-                _moving = false;
+
+                _connected = true;
+                _calibrated = false;
+                LensAF.RegisterFocuser.Send(this.DisplayName);
+
                 return _connected;
             });
+        }
+
+        private CancellationTokenSource _CalibrationToken;
+        public ICommand StartCalibration { get; }
+        public ICommand CancelCalibration { get; }
+
+        public void Calibrate(CancellationToken token) {
+            _calibrated = true;
+            _moving = true;
+            //System.Windows.MessageBox.Show("Move focus to infinity before pressing OK");
+            for (int i = 0; i < 2; i++) {
+
+                _currentPosition = 30000;
+                _connected = _cameraMediator.SendCommandBool($"SetPosition {-30000}");
+                Thread.Sleep(500);
+                if (!_connected)
+                    throw new NotConnectedException("Camera not connected.  Connect camera first.");
+            }
+            _moving = false;
+//            LensAF.RegisterFocuser.Send(this.DisplayName);
+            LensAF.GotoFocus.Send();
+
+            return;
         }
 
         public void Disconnect() {

@@ -125,7 +125,6 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 public string Label { get { return label; } }
                 public int Id { get { return id; } }
-
             }
 
             // KP 6016x4000 14bit

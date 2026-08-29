@@ -1,23 +1,30 @@
 ﻿using Accord.Imaging.Filters;
+using CommunityToolkit.Mvvm.Input;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
+using NINA.Core.Utility;
 using NINA.Equipment.Equipment.MyCamera;
+using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Interfaces.ViewModel;
 using NINA.Plugin.Interfaces;
 using NINA.Profile.Interfaces;
 using NINA.WPF.Base.Mediator;
 using NINA.WPF.Base.ViewModel;
+using Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
+using System.Reflection;
 using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Xceed.Wpf.Toolkit.Primitives;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
@@ -27,14 +34,19 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     [Export(typeof(IDockableVM))]
     public class NinaPentaxDriverDockable : DockableVM, ICameraConsumer {
         private readonly ICameraMediator cameraMediator;
+        private readonly IFocuserMediator focuserMediator;
         public static string SelectedItem="null";
-        public static string SelectedZoomItem = "null";
+        public static string SelectedZoomItem = "null"; 
         static int oldValues = 0;
+
+        // Expose commands on the dockable so XAML can bind to them
+        public ICommand StartCalibration { get; }
+        public ICommand CancelCalibration { get; }
 
         [ImportingConstructor]
         public NinaPentaxDriverDockable(
             IProfileService profileService,
-            ICameraMediator cameraMediator) : base(profileService) {
+            ICameraMediator cameraMediator, IFocuserMediator focuserMediator) : base(profileService) {
 
             // This will reference the resource dictionary to import the SVG graphic and assign it as the icon for the header bar
             var dict = new ResourceDictionary();
@@ -43,8 +55,14 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             ImageGeometry.Freeze();
 
             this.cameraMediator = cameraMediator;
+            this.focuserMediator = focuserMediator;
             cameraMediator.RegisterConsumer(this);
             Title = "Camera Lens Aperture & LV Zoom";
+
+            // Wire up commands on the dockable VM to invoke the focuser driver's commands via reflection
+            StartCalibration = new CommunityToolkit.Mvvm.Input.RelayCommand(() => ExecuteStartCalibration());
+            CancelCalibration = new CommunityToolkit.Mvvm.Input.RelayCommand(() => ExecuteCancelCalibration());
+//            this.focuserMediator = focuserMediator;
         }
 
         public void Dispose() {
@@ -167,6 +185,102 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
                 } else {
                 }
                 RaisePropertyChanged(nameof(CameraInfo));
+            }
+        }
+
+        private void ExecuteStartCalibration() {
+            Logger.Info("here ExecuteStartCalibration");
+            IDevice device = focuserMediator.GetDevice();
+            //var canon = device as CanonFocuser;
+
+            //var focuserInstance = GetFocuserInstance();
+            var focuser = device as FocuserDriver;
+            if (focuser == null) {
+                Logger.Info("focuser null ExecuteStartCalibration");
+                return;
+            }
+
+            // Try to invoke ICommand property named StartCalibration
+            var prop = focuser.GetType().GetProperty("StartCalibration", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (prop != null) {
+                if (typeof(ICommand).IsAssignableFrom(prop.PropertyType)) {
+                    var cmd = prop.GetValue(focuser) as ICommand;
+                    if (cmd != null && cmd.CanExecute(null)) {
+                        Logger.Info("Calling Property StartCalibration");
+                        cmd.Execute(null);
+                        return;
+                    }
+                }
+            }
+/*
+            // Try method named StartCalibration()
+            var method = focuser.GetType().GetMethod("StartCalibration", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (method != null) {
+                Logger.Info("Calling Method StartCalibration");
+                try {
+                    method.Invoke(focuser, null);
+                    return;
+                } catch { }
+            }
+
+            // Try Calibrate(CancellationToken) fallback
+            var calib = focuser.GetType().GetMethod("Calibrate", new[] { typeof(CancellationToken) });
+            if (calib != null) {
+                Logger.Info("Calling Method Calibrate");
+                try {
+                    calib.Invoke(focuser, new object[] { CancellationToken.None });
+                    return;
+                } catch { }
+            }
+
+            // Try parameterless Calibrate()
+            calib = focuser.GetType().GetMethod("Calibrate", Type.EmptyTypes);
+            if (calib != null) {
+                Logger.Info("Calling Method Empty Calibrate");
+                try {
+                    calib.Invoke(focuser, null);
+                } catch { }
+            }
+*/
+            Logger.Info("Returning Calibrate");
+
+        }
+
+        private void ExecuteCancelCalibration() {
+            Logger.Info("here ExecuteCancelCalibration");
+            IDevice device = focuserMediator.GetDevice();
+            //var canon = device as CanonFocuser;
+
+            //var focuserInstance = GetFocuserInstance();
+            var focuser = device as FocuserDriver;
+            if (focuser == null) return;
+
+            // Try to invoke ICommand property named CancelCalibration
+            var prop = focuser.GetType().GetProperty("CancelCalibration", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (prop != null) {
+                if (typeof(ICommand).IsAssignableFrom(prop.PropertyType)) {
+                    var cmd = prop.GetValue(focuser) as ICommand;
+                    if (cmd != null && cmd.CanExecute(null)) {
+                        cmd.Execute(null);
+                        return;
+                    }
+                }
+            }
+
+            // Try method named CancelCalibration()
+            var method = focuser.GetType().GetMethod("CancelCalibration", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (method != null) {
+                try {
+                    method.Invoke(focuser, null);
+                    return;
+                } catch { }
+            }
+
+            // Try to find and cancel a CancellationTokenSource field named _CalibrationToken
+            var field = focuser.GetType().GetField("_CalibrationToken", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (field != null) {
+                var tokenSrc = field.GetValue(focuser) as CancellationTokenSource;
+                tokenSrc?.Cancel();
             }
         }
     }

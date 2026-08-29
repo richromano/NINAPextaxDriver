@@ -6,7 +6,7 @@
     xmlns:local="clr-namespace:Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables"
     xmlns:mini="clr-namespace:NINA.View.Sequencer.MiniSequencer;assembly=NINA.Sequencer"
     xmlns:nina="clr-namespace:NINA.View.Sequencer;assembly=NINA.Sequencer"
-    xmlns:util="clr-namespace:NINA.Core.Utility;assembly=NINA.Core" xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+    xmlns:util="clr-namespace:NINA.Core.Utility;assembly=NINA.Core" xmlns:sys="clr-namespace:System;assembly=System.Runtime" xmlns:ninactrl="clr-namespace:NINA.CustomControlLibrary;assembly=NINA.CustomControlLibrary">
 
     <!--  The datatemplae for the dockable is indicated by the fully qualified class name and the postfix _Dockable  -->
     <DataTemplate x:Key="Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable_Dockable">
@@ -23,6 +23,8 @@
                     <!-- First column -->
                     <ColumnDefinition Width="*" />
                     <!-- Second column -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Third column -->
                 </Grid.ColumnDefinitions>
 
                 <ListBox x:Name="FBox" SelectionChanged="ListBox_SelectionChanged" Width="150" Height="300" Foreground="White" Background="Black" FontFamily="Arial" FontSize="16" FontWeight="Bold" Grid.Column="0">
@@ -45,6 +47,10 @@
                     <ListBoxItem Content="LV Zoom 4.0"/>
                     <ListBoxItem Content="LV Zoom 8.0"/>
                 </ListBox>
+                <ninactrl:CancellableButton 
+                    ButtonText="CalibrateLens" 
+                    Command="{Binding StartCalibration}" 
+                    CancelCommand="{Binding CancelCalibration}" CancelButtonImage="{StaticResource CancelSVG}" Width="120" Height="30" Grid.Column="3"/>
             </Grid>
         </Grid>
     </DataTemplate>
