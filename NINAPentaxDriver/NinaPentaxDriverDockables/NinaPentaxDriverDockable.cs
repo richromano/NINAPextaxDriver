@@ -212,36 +212,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
                     }
                 }
             }
-/*
-            // Try method named StartCalibration()
-            var method = focuser.GetType().GetMethod("StartCalibration", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (method != null) {
-                Logger.Info("Calling Method StartCalibration");
-                try {
-                    method.Invoke(focuser, null);
-                    return;
-                } catch { }
-            }
 
-            // Try Calibrate(CancellationToken) fallback
-            var calib = focuser.GetType().GetMethod("Calibrate", new[] { typeof(CancellationToken) });
-            if (calib != null) {
-                Logger.Info("Calling Method Calibrate");
-                try {
-                    calib.Invoke(focuser, new object[] { CancellationToken.None });
-                    return;
-                } catch { }
-            }
-
-            // Try parameterless Calibrate()
-            calib = focuser.GetType().GetMethod("Calibrate", Type.EmptyTypes);
-            if (calib != null) {
-                Logger.Info("Calling Method Empty Calibrate");
-                try {
-                    calib.Invoke(focuser, null);
-                } catch { }
-            }
-*/
             Logger.Info("Returning Calibrate");
 
         }

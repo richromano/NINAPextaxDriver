@@ -618,6 +618,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     _camera = null;
                 }
 
+                Lens = "Take exposure and refresh";
+
                 if (_camera == null) {
                     Settings.DeviceId = Name;
 
@@ -1008,7 +1010,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
 
         private CancellationTokenSource bulbCompletionCTS = null;
-        private string lens;
+        private string lens="Take exposure and refresh";
 
         private void BulbCapture(double exposureTime, Action capture, Action stopCapture) {
             Logger.Debug("Starting bulb capture");

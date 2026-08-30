@@ -126,7 +126,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public string DisplayName {
             get {
-                return _cameraMediator.SendCommandString("GetLens");
+                if (!IsCameraConnected())
+                    return "Connect Camera, Take Exposure and Refresh";
+
+                 return _cameraMediator.SendCommandString("GetLens");
             }
         }
 
@@ -177,9 +180,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 }
 
                 Logger.Info("Lens DisplayName [" + this.DisplayName + "]");
-                if (string.IsNullOrEmpty(this.DisplayName)) {
+                if (this.DisplayName== "Take exposure and refresh") {
 //                    _cameraMediator.Capture();
-                    throw new NotConnectedException("Talk a picture before connecting lens.");
+                    throw new NotConnectedException("Take exposure before connecting focuser.");
                     //return false;
                 }
 
