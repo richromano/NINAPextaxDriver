@@ -2,6 +2,7 @@
 using NINA.Core.Enum;
 using NINA.Core.Model.Equipment;
 using NINA.Core.Utility;
+using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
@@ -1331,9 +1332,15 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             AbortExposure();
         }
 
+        static bool aborting = false;
         public void AbortExposure() {
             // TODO: fix abort exposure - test bulb mode
             LogCameraMessage(0, "", "AbortExposure");
+            if (aborting) {
+                Notification.ShowError("AbortExposure: Already aborting.  Reset Camera and Restart NINA");
+                return;
+            }
+
             if (LastSetFastReadout) {
                 m_captureState = CameraStates.Idle;
                 return;
@@ -1342,6 +1349,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             // TODO: cameraWaiting is bad because it will get set to other, we check in connect though
             if (m_captureState != CameraStates.Exposing && m_captureState != CameraStates.Waiting)
                 return;
+
+            aborting = true;
 
             //StopCapture doesn't get called
             LogCameraMessage(0, "AbortExposure", "Stopping Capture.");
@@ -1366,6 +1375,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 Thread.Sleep(100);
                 LogCameraMessage(0, "AbortExposure", "Waiting for capture to finish.");
             }
+
+            aborting = false;
 
             return;
             //DriverCommon.LogCameraMessage(0, "AbortExposure", "Failed. "+response.Errors.First().Message);
