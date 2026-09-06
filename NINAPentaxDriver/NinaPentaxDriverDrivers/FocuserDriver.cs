@@ -71,7 +71,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public int MaxIncrement {
             get {
-                return 200;
+                return 500;
             }
         }
 
@@ -89,14 +89,16 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             set {
                 // Need to limit because there is a bug in N.I.N.A.
                 _moving = true;
-                while (_currentPosition - value > 200) {
-                    _cameraMediator.SendCommandBool($"SetPosition {200}");
-                    _currentPosition = _currentPosition - 200;
+                while (_currentPosition - value > 500) {
+                    _cameraMediator.SendCommandBool($"SetPosition {500}");
+                    _currentPosition = _currentPosition - 500;
+                    Thread.Sleep(100);
                 }
 
-                while (_currentPosition - value < -200) {
-                    _cameraMediator.SendCommandBool($"SetPosition {-200}");
-                    _currentPosition = _currentPosition + 200;
+                while (_currentPosition - value < -500) {
+                    _cameraMediator.SendCommandBool($"SetPosition {-500}");
+                    _currentPosition = _currentPosition + 500;
+                    Thread.Sleep(100);
                 }
 
                 _cameraMediator.SendCommandBool($"SetPosition {_currentPosition-value}");
