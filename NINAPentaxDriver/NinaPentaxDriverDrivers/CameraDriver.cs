@@ -1332,14 +1332,14 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             AbortExposure();
         }
 
-        static bool aborting = false;
+        //static bool aborting = false;
         public void AbortExposure() {
             // TODO: fix abort exposure - test bulb mode
             LogCameraMessage(0, "", "AbortExposure");
-            if (aborting) {
+            /*if (aborting) {
                 Notification.ShowError("AbortExposure: Already aborting.  Reset Camera and Restart NINA");
                 return;
-            }
+            }*/
 
             if (LastSetFastReadout) {
                 m_captureState = CameraStates.Idle;
@@ -1350,7 +1350,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             if (m_captureState != CameraStates.Exposing && m_captureState != CameraStates.Waiting)
                 return;
 
-            aborting = true;
+            //aborting = true;
 
             //StopCapture doesn't get called
             LogCameraMessage(0, "AbortExposure", "Stopping Capture.");
@@ -1359,8 +1359,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 LogCameraMessage(0, "AbortExposure", "Waiting for capture to start.");
             }
 
-            if (Settings.BulbModeEnable)
+            //if (Settings.BulbModeEnable)
+            //    canceledCaptureResponse = lastCaptureResponse;
+
+            if (!Settings.BulbModeEnable)
                 canceledCaptureResponse = lastCaptureResponse;
+            else
+                bulbCompletionCTS.Cancel();
 
             /*if (previousDuration > 5)
             {
@@ -1371,12 +1376,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }*/
             //Response response =DriverCommon.m_camera.StopCapture();
 
-            while (m_captureState == CameraStates.Exposing) {
+            /*while (m_captureState == CameraStates.Exposing) {
                 Thread.Sleep(100);
                 LogCameraMessage(0, "AbortExposure", "Waiting for capture to finish.");
-            }
+            }*/
 
-            aborting = false;
+            //aborting = false;
 
             return;
             //DriverCommon.LogCameraMessage(0, "AbortExposure", "Failed. "+response.Errors.First().Message);
