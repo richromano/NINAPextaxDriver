@@ -204,7 +204,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             _calibrated = true;
             _moving = true;
             //System.Windows.MessageBox.Show("Move focus to infinity before pressing OK");
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 3; i++) {
 
                 _currentPosition = 30000;
                 _connected = _cameraMediator.SendCommandBool($"SetPosition {-30000}");

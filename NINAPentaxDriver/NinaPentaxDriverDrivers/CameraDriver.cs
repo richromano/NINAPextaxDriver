@@ -1598,7 +1598,11 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 if (match.Success) {
                     int number = int.Parse(match.Value);
                     LogCameraMessage(0, "SendCommandBool Position", $"Number is {number}");
-                    _camera.Focus(number);
+                    if(number>0)
+                        _camera.Focus((int)((double)number));
+                    else
+                        _camera.Focus((int)((double)number));
+
                     return true;
                 }
 
