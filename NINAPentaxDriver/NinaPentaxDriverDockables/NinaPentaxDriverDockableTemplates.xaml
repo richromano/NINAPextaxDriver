@@ -47,10 +47,16 @@
                     <ListBoxItem Content="LV Zoom 4.0"/>
                     <ListBoxItem Content="LV Zoom 8.0"/>
                 </ListBox>
+                <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <ninactrl:CancellableButton 
-                    ButtonText="CalibrateLens" 
+                    ButtonText="Calibrate Lens" 
                     Command="{Binding StartCalibration}" 
-                    CancelCommand="{Binding CancelCalibration}" CancelButtonImage="{StaticResource CancelSVG}" Width="120" Height="30" Grid.Column="3"/>
+                    CancelCommand="{Binding CancelCalibration}" CancelButtonImage="{StaticResource CancelSVG}" Width="120" Height="30"/>
+                <ninactrl:CancellableButton 
+                    ButtonText="AF Focus" 
+                    Command="{Binding StartAF}" 
+                    Width="120" Height="30"/>
+                </StackPanel>
             </Grid>
         </Grid>
     </DataTemplate>

@@ -41,6 +41,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
 
         // Expose commands on the dockable so XAML can bind to them
         public ICommand StartCalibration { get; }
+        public ICommand StartAF { get; }
         public ICommand CancelCalibration { get; }
 
         [ImportingConstructor]
@@ -62,7 +63,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             // Wire up commands on the dockable VM to invoke the focuser driver's commands via reflection
             StartCalibration = new CommunityToolkit.Mvvm.Input.RelayCommand(() => ExecuteStartCalibration());
             CancelCalibration = new CommunityToolkit.Mvvm.Input.RelayCommand(() => ExecuteCancelCalibration());
-//            this.focuserMediator = focuserMediator;
+            StartAF = new CommunityToolkit.Mvvm.Input.RelayCommand(() => ExecuteStartAF());
+            //            this.focuserMediator = focuserMediator;
         }
 
         public void Dispose() {
@@ -186,6 +188,35 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
                 }
                 RaisePropertyChanged(nameof(CameraInfo));
             }
+        }
+
+        private void ExecuteStartAF() {
+            Logger.Info("here ExecuteStartAF");
+            IDevice device = cameraMediator.GetDevice();
+            //var canon = device as CanonFocuser;
+
+            //var focuserInstance = GetFocuserInstance();
+            var camera = device as CameraDriver;
+            if (camera == null) {
+                Logger.Info("camera null ExecuteStartAF");
+                return;
+            }
+
+            // Try to invoke ICommand property named StartAF
+            var prop = camera.GetType().GetProperty("StartAF", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (prop != null) {
+                if (typeof(ICommand).IsAssignableFrom(prop.PropertyType)) {
+                    var cmd = prop.GetValue(camera) as ICommand;
+                    if (cmd != null && cmd.CanExecute(null)) {
+                        Logger.Info("Calling Property StartAF");
+                        cmd.Execute(null);
+                        return;
+                    }
+                }
+            }
+
+            Logger.Info("Returning Calibrate");
+
         }
 
         private void ExecuteStartCalibration() {

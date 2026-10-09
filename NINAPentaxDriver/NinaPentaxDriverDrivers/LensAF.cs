@@ -32,7 +32,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             public Guid? CorrelationId => null;
             public int Version => 1;
             public IDictionary<string, object> CustomHeaders => new Dictionary<string, object>();
-            public string Topic => "RTG.ManualFocuser.RegisterFocuser";
+            public string Topic => "Cwseo.NINA.ManualFocuser.RegisterFocuser";
             public object Content => focuserName;
 
 
@@ -51,7 +51,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             public Guid? CorrelationId => null;
             public int Version => 1;
             public IDictionary<string, object> CustomHeaders => new Dictionary<string, object>();
-            public string Topic => "RTG.ManualFocuser.GotoFocus";
+            public string Topic => "Cwseo.NINA.ManualFocuser.GotoFocus";
             public object Content => new();
 
 

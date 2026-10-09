@@ -107,6 +107,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }
         }
 
+        // Adjust this per lens
         public double StepSize { get => 1.0; }
 
         public bool TempCompAvailable { get => false; }

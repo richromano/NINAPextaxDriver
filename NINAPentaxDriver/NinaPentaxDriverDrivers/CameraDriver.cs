@@ -22,10 +22,13 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using static Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers.CameraProvider;
 using static System.Net.Mime.MediaTypeNames;
 using String = System.String;
+using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
+using AsyncRelayCommand = CommunityToolkit.Mvvm.Input.AsyncRelayCommand;
 
 namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
     public class CameraDriver : BaseINPC, ICamera {
@@ -57,6 +60,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         internal static bool useFile = true;
         
         private SerialRelayInteraction serialRelayInteraction;
+        public ICommand StartAF { get; }
 
         public CameraDriver(IProfileService profileService, ITelescopeMediator telescopeMediator, IExposureDataFactory exposureDataFactory, PentaxKPProfile.DeviceInfo device) {
             _profileService = profileService;
@@ -64,6 +68,12 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             _telescopeMediator = telescopeMediator;
             _device = device;
             _profileService.ActiveProfile.TelescopeSettings.FocalLength = 0.0;
+            StartAF = new RelayCommand(() => {
+                Logger.Info("AF requested", "AF");
+                if (!this.Connected) return;
+                _camera.Focus();
+            });
+
         }
 
         #region Internal Helpers
@@ -1555,10 +1565,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 fs.Close();
 
+                while (!IsFileClosed(filename)) { }
+
                 SetFocalLength(filename);
                 Lens = GetLensName(filename);
-
-                while (!IsFileClosed(filename)) { }
 
                 File.Delete(filename);
 
