@@ -45,7 +45,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         private static int MaxImageWidthPixels;
         private static int MaxImageHeightPixels;
         private static PentaxKPProfile Settings = new PentaxKPProfile();
-        private int gainValue;
+        private int gainValue=0;
         public static CameraStates m_captureState = CameraStates.Error;
         public static bool LastSetFastReadout;
         public static short FNumbers;
@@ -120,6 +120,18 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             public override void LiveViewFrameUpdated(
                 CameraDevice sender,
                 byte[] liveViewFrame) {
+                string status = "None";
+                if (sender.Status.CurrentCapture != null) {
+                    status = sender.Status.CurrentCapture.State.ToString();
+                    if (sender.Status.CurrentCapture.State.Equals(Ricoh.CameraController.CaptureState.Executing))
+                        status = "Executing";
+                    if (sender.Status.CurrentCapture.State.Equals(Ricoh.CameraController.CaptureState.Complete))
+                        status = "Complete";
+                    if (sender.Status.CurrentCapture.State.Equals(Ricoh.CameraController.CaptureState.Unknown))
+                        status = "Unknown";
+                }
+
+                LogCameraMessage(5, "", "Received Liveview Image " + " Capture state " + m_captureState.ToString()+" Camera State "+status);
                 // Display liveViewFrame in Image control (Name: image) of WPF
                 if (LastSetFastReadout){// && m_captureState == CameraStates.Exposing) {
                     var memoryStream = new MemoryStream(liveViewFrame);
@@ -307,6 +319,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 if (_camera == null)
                     return 0;
 
+                LogCameraMessage(5, "", "_camera.Status.BatteryLevel");
+
                 return (int)_camera.Status.BatteryLevel;
             }
         }
@@ -343,6 +357,9 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             }
 
             set {
+                if (gainValue == value)
+                    return;
+
                 LogCameraMessage(0,"", "set_Gain "+value.ToString());
                 gainValue = value;
                 if (gainValue < 100)
@@ -369,6 +386,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             iso = ISO.ISO3200;
                         if (gainValue == 6400)
                             iso = ISO.ISO6400;
+                        LogCameraMessage(5, "", "_camera.SetCaptureSettings iso");
                         _camera.SetCaptureSettings(new List<CaptureSetting>() { iso });
                     }
                 }
@@ -487,6 +505,18 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 //using (new SerializedAccess(this, "get_ReadoutMode"))
                 {
                     LogCameraMessage(1, "", "get_ReadoutMode");
+                    Thread.Sleep(100);
+                    /*string status = "Null";
+                    if (_camera.Status.CurrentCapture != null) {
+                        status=_camera.Status.CurrentCapture.State.ToString();
+                        if (_camera.Status.CurrentCapture.State.Equals(Ricoh.CameraController.CaptureState.Executing))
+                            status = "Executing";
+                        if (_camera.Status.CurrentCapture.State.Equals(Ricoh.CameraController.CaptureState.Complete))
+                            status = "Complete";
+                        if (_camera.Status.CurrentCapture.State.Equals(Ricoh.CameraController.CaptureState.Unknown))
+                            status = "Unknown";
+                    }
+                    LogCameraMessage(0, "Capturing", status);*/
                     return (short)m_readoutmode;
                 }
             }
@@ -502,8 +532,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             case 0:
                                 FastReadout = false;
                                 m_readoutmode = 0;
-                                if (Settings.UseLiveview)
+                                if (Settings.UseLiveview) {
+                                    LogCameraMessage(5, "", "_camera.StartLiveView");
                                     _camera.StartLiveView(0);
+                                }
                                 MaxImageWidthPixels = Settings.Info.ImageWidthPixels; // Constants to define the ccd pixel dimenstion
                                 MaxImageHeightPixels = Settings.Info.ImageHeightPixels;
                                 //StartX = 0;
@@ -550,19 +582,23 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                         if (!value) {
                             LastSetFastReadout = false;
                             // TODO: Review?
+                            LogCameraMessage(5, "", "_camera.StepLiveView");
                             _camera.StopLiveView();
                             Thread.Sleep(500);
                             // Need to clear because the expected format has changed
                             bitmapsToProcess.Clear();
                             //imagesToProcess.Clear();
-                            if (Settings.UseLiveview)
+                            if (Settings.UseLiveview) {
+                                LogCameraMessage(5, "", "_camera.StartLiveView");
                                 _camera.StartLiveView(0);
+                            }
                         }
                         //else
                         //In FastReadout we don't do any real captures so cancel the current one
                         //StopThreadCapture();
                     } else {
                         if (value) {
+                            LogCameraMessage(5, "", "_camera.StartLiveView");
                             _camera.StartLiveView(0);
                             // Need to clear because the expected format has changed
                             //StopThreadCapture();
@@ -622,8 +658,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                 // TODO: disconnect when necessary
                 if (_camera != null) {
+                    LogCameraMessage(5, "", "_camera.IsConnected");
                     if (_camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB)) {
                         LogCameraMessage(0, "Connected", "Disconnecting first...");
+                        LogCameraMessage(5, "", "_camera.Disconnect");
                         _camera.Disconnect(Ricoh.CameraController.DeviceInterface.USB);
                     }
                     _camera = null;
@@ -648,10 +686,13 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                     }
 
                     if (_camera != null) {
+                        LogCameraMessage(5, "", "_camera.Connect");
                         var response = _camera.Connect(Ricoh.CameraController.DeviceInterface.USB);
                         if (response.Equals(Response.OK)) {
+                            LogCameraMessage(5, "", "_camera.Model");
                             LogCameraMessage(0,"Connected", "Connected. Model: " + _camera.Model + ", SerialNumber:" + _camera.SerialNumber);
                             Settings.DeviceId = _camera.Model;
+                            gainValue=0;
 
                             /*bool k3m3 = false;
 
@@ -662,20 +703,26 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             }*/
 
                             LiveViewSpecification liveViewSpecification = new LiveViewSpecification();
+                            LogCameraMessage(5, "", "_camera.GetCameraDeviceSettings liveViewSpecification");
                             _camera.GetCameraDeviceSettings(
                                 new List<CameraDeviceSetting>() { liveViewSpecification }); ;
                             LiveViewSpecificationValue liveViewSpecificationValue =
                                 (LiveViewSpecificationValue)liveViewSpecification.Value;
 
-                            /*LiveViewImage liveViewImage = liveViewSpecificationValue.Get();
-                            info.ImageWidthPixels = (int)liveViewImage.Width;
-                            info.ImageHeightPixels = (int)liveViewImage.Height;*/
+                            LiveViewImage liveViewImage = liveViewSpecificationValue.Get();
+
+                            LogCameraMessage(0, "Connected", "LiveView Size (X,Y): " + liveViewImage.Width.ToString() + ", " + liveViewImage.Height.ToString());
+
+                            //info.ImageWidthPixels = (int)liveViewImage.Width;
+                            //info.ImageHeightPixels = (int)liveViewImage.Height;
 
                             ExposureProgram exposureProgram = new ExposureProgram();
 
                             Settings.BulbModeEnable = false;
 
                             try {
+                                LogCameraMessage(5, "", "_camera.GetCaptureSettings exposureProgram");
+
                                 _camera.GetCaptureSettings(
                                     new List<CaptureSetting>() { exposureProgram });
                             } catch {
@@ -690,6 +737,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 }
                             }
 
+                            LogCameraMessage(5, "", "_camera.IsConnected");
+
                             bool connect = _camera.IsConnected(Ricoh.CameraController.DeviceInterface.USB);
                             if (!connect) {
                                 //System.Windows.Forms.MessageBox.Show("Connect seems to have failed");
@@ -701,6 +750,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             FNumbers=0;
 
                             FNumber fNumber = new FNumber();
+                            LogCameraMessage(5, "", "_camera.GetCaptureSettings fNumber");
                             _camera.GetCaptureSettings(new List<CaptureSetting>() { fNumber });
                             List<CaptureSetting> availableFNumberSettings = fNumber.AvailableSettings;
                             foreach (CaptureSetting setting in availableFNumberSettings) {
@@ -741,14 +791,20 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             StillImageCaptureFormat sicf = new StillImageCaptureFormat();
                             sicf = Ricoh.CameraController.StillImageCaptureFormat.DNG;
+                            StillImageQuality siq = new StillImageQuality();
+                            siq=Ricoh.CameraController.StillImageQuality.LargeBest;
 
                             //ExposureProgram ep = new ExposureProgram();
                             //ep = Ricoh.CameraController.ExposureProgram.Bulb;
                             //DriverCommon.m_camera.SetCaptureSettings(new List<CaptureSetting>() { ep });
                             LogCameraMessage(0, "Connected", "Setting capture setting");
                             try {
+                                LogCameraMessage(5, "", "_camera.SetCaptureSettings sw");
                                 _camera.SetCaptureSettings(new List<CaptureSetting>() { sw });
-                                _camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });
+                                LogCameraMessage(5, "", "_camera.SetCaptureSettings siq");
+                                _camera.SetCaptureSettings(new List<CaptureSetting>() { siq });
+                                LogCameraMessage(5, "", "_camera.SetCaptureSettings sicf");
+                                _camera.SetCaptureSettings(new List<CaptureSetting>() { sicf });								
                             } catch (Exception e) {
                                 LogCameraMessage(0, "Connected", e.Message.ToString());
                                 throw new ASCOM.DriverException("Can't set capture settings.");
@@ -760,8 +816,11 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                             Thread.Sleep(1000);
 
                             if (Settings.UseLiveview) {
+                                LogCameraMessage(5, "", "_camera.StartLiveView");
                                 _camera.StartLiveView(0);
+                                LogCameraMessage(5, "", "_camera.StopLiveView");
                                 _camera.StopLiveView();
+                                LogCameraMessage(5, "", "_camera.StartLiveView");
                                 _camera.StartLiveView(0);
                             }
 
@@ -772,6 +831,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
                             Gain = 100;
                             m_captureState = CameraStates.Idle;
+                            LogCameraMessage(5, "", "_camera.EventListeners.Count");
 
                             if (_camera.EventListeners.Count == 0)
                                 _camera.EventListeners.Add(new EventListener());
@@ -795,6 +855,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 if (_camera != null) {
                     // Stop the capture if necessary
                     // TODO: Should be async
+                    LogCameraMessage(5, "", "_camera.Disconnect");
                     _camera.Disconnect(Ricoh.CameraController.DeviceInterface.USB);
                 }
 
@@ -966,6 +1027,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
         }
         private void StartBulbCapture() {
             Logger.Debug("Bulb start of exposure");
+            LogCameraMessage(5, "", "_camera.StartCapture");
             StartCaptureResponse response = _camera.StartCapture(false);
             if (response.Result == Result.OK) {
                 lastCaptureResponse = response.Capture.ID;
@@ -983,6 +1045,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         private void StopBulbCapture() {
             Logger.Debug("Bulb stop of exposure");
+            LogCameraMessage(5, "", "_camera.StopCapture");
             _camera.StopCapture();
         }
 
@@ -1319,8 +1382,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 if (Duration > 1199.99)
                     shutterSpeed = ShutterSpeed.SS1200;
 
+                LogCameraMessage(5, "", "_camera.SetCaptureSettings shutterSpeed");
                 _camera.SetCaptureSettings(new List<CaptureSetting>() { shutterSpeed });
 
+                LogCameraMessage(5, "", "_camera.StartCapture");
                 StartCaptureResponse response = _camera.StartCapture(false);
                 if (response.Result == Result.OK) {
                     lastCaptureResponse = response.Capture.ID;
