@@ -14,6 +14,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
     public partial class MyPluginDockableTemplates : ResourceDictionary {
         public MyPluginDockableTemplates() {
             InitializeComponent();
+            Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable.StaticZoom1 = true;
         }
 
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -28,6 +29,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             var listBox = sender as ListBox;
             string selectedItem = listBox?.SelectedItem.ToString();
             Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable.SelectedZoomItem = selectedItem;
+            if (selectedItem == "System.Windows.Controls.ListBoxItem: LV Zoom 1.0")
+                Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable.StaticZoom1 = true;
+            else
+                Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables.NinaPentaxDriverDockable.StaticZoom1 = false;
             //            MessageBox.Show($"Selected Item: {selectedItem}");
         }
     }

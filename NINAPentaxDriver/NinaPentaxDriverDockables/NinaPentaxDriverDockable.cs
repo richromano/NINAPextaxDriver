@@ -36,7 +36,8 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
         private readonly ICameraMediator cameraMediator;
         private readonly IFocuserMediator focuserMediator;
         public static string SelectedItem="null";
-        public static string SelectedZoomItem = "null"; 
+        public static string SelectedZoomItem = "null";
+        public static bool StaticZoom1 = true;
         static int oldValues = 0;
 
         // Expose commands on the dockable so XAML can bind to them
@@ -200,6 +201,11 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDockables {
             if (camera == null) {
                 Logger.Info("camera null ExecuteStartAF");
                 return;
+            }
+
+            if(!StaticZoom1) {
+                bool response = cameraMediator.SendCommandBool("System.Windows.Controls.ListBoxItem: LV Zoom 1.0");
+                StaticZoom1 = true;
             }
 
             // Try to invoke ICommand property named StartAF

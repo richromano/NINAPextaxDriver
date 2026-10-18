@@ -48,14 +48,18 @@
                     <ListBoxItem Content="LV Zoom 8.0"/>
                 </ListBox>
                 <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ninactrl:CancellableButton 
-                    ButtonText="Calibrate Lens" 
-                    Command="{Binding StartCalibration}" 
-                    CancelCommand="{Binding CancelCalibration}" CancelButtonImage="{StaticResource CancelSVG}" Width="120" Height="30"/>
-                <ninactrl:CancellableButton 
-                    ButtonText="AF Focus" 
-                    Command="{Binding StartAF}" 
-                    Width="120" Height="30"/>
+                    <TextBlock Text="NOTE: All buttons work without the focuser connected&#x0a;" FontSize="12" TextWrapping="Wrap" Width="120"/>
+                    <TextBlock Text="Calibrate Lens will move the lens to the hard stop beyond infinity&#x0a;" FontSize="12" TextWrapping="Wrap" Width="120"/>
+                    <ninactrl:CancellableButton 
+                        ButtonText="Calibrate Lens" 
+                        Command="{Binding StartCalibration}" 
+                        CancelCommand="{Binding CancelCalibration}" CancelButtonImage="{StaticResource CancelSVG}" Width="120" Height="30"/>
+                    <TextBlock Text="&#x0a;" FontSize="12" TextWrapping="Wrap" Width="120"/>
+                    <ninactrl:CancellableButton 
+                        ButtonText="AF Focus" 
+                        Command="{Binding StartAF}"
+                        Width="120" Height="30"/>
+                    <TextBlock Text="&#x0a;AF Focus will trigger the current Contrast Detection AF and set LV Zoom to 1.0." FontSize="12" TextWrapping="Wrap" Width="120"/>
                 </StackPanel>
             </Grid>
         </Grid>

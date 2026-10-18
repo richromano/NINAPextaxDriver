@@ -70,8 +70,22 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
             _profileService.ActiveProfile.TelescopeSettings.FocalLength = 0.0;
             StartAF = new RelayCommand(() => {
                 Logger.Info("AF requested", "AF");
+                System.Windows.Vector fp;
+                fp.X = 0.5;
+                fp.Y = 0.5;
                 if (!this.Connected) return;
-                _camera.Focus();
+
+                Logger.Info("Calling AF", "AF");
+                Response rp = _camera.Focus();
+                if (rp.Result.Equals(Response.OK))
+                    Logger.Info("Calling AF success", "AF");
+                else {
+                    string myError = "";
+                    rp.Errors.ForEach(error => { myError += error.Message; });
+                    Logger.Info("Calling AF failure "+myError, "AF");
+                }
+
+
             });
 
         }
@@ -442,7 +456,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
 
         public string DriverInfo => "https://github.com/richromano/NINAPextaxDriver";
 
-        public string DriverVersion => "7/10/2026";
+        public string DriverVersion => "18/18/2026";
 
         public double TemperatureSetPoint {
             get => double.NaN;
@@ -810,7 +824,7 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                                 throw new ASCOM.DriverException("Can't set capture settings.");
                             }
 
-                            LogCameraMessage(0, "Connect", "Driver Version: 7/10/2026");
+                            LogCameraMessage(0, "Connect", "Driver Version: 10/18/2026");
                             LogCameraMessage(0, "Bulb mode", Settings.BulbModeEnable.ToString()+" mode "+exposureProgram.ToString());
                             // Sleep to let the settings take effect
                             Thread.Sleep(1000);
@@ -1397,8 +1411,10 @@ namespace Rtg.NINA.NinaPentaxDriver.NinaPentaxDriverDrivers {
                 } else {
                     lastCaptureResponse = "None";
                     m_captureState = CameraStates.Error;
-                    LogCameraMessage(0, "StartExposure", "Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button");
-                    throw new ASCOM.InvalidOperationException("Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button");
+                    string myError = "";
+                    response.Errors.ForEach(error => { myError += error.Message; });
+                    LogCameraMessage(0, "StartExposure", "Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button. "+myError);
+                    throw new ASCOM.InvalidOperationException("Call to StartExposure SDK not successful: Disconnect camera USB and make sure you can take a picture with shutter button. "+myError);
                 }
             }
         }
